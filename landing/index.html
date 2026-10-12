@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script>
@@ -1103,18 +1104,12 @@
       scene.background = new THREE.Color(0x03121C);
       scene.fog = new THREE.FogExp2(0x03121C, 0.012);
 
-      // Camera: Architectural Isometric-Perspective with Smooth Damping
+      // Camera: Architectural Isometric-Perspective
       const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
       
-      // Default Isometric Camera Position (Websites in 2026 Style)
       const isoCamPos = new THREE.Vector3(-14, 18, 22);
       const isoLookAt = new THREE.Vector3(-2, 1, 3);
-      
-      let targetCamPos = isoCamPos.clone();
-      let targetLookAt = isoLookAt.clone();
-      let currentLookAt = isoLookAt.clone();
-      camera.position.copy(targetCamPos);
-      camera.lookAt(currentLookAt);
+      camera.position.copy(isoCamPos);
 
       const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
@@ -1130,7 +1125,51 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      // 2. Crisp Architectural Lighting
+      // 2. Pro OrbitControls with Damping (Silky Smooth Inertial Movement)
+      let controls = null;
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 5;
+        controls.maxDistance = 55;
+        controls.maxPolarAngle = Math.PI / 2.05; // Prevent camera going underground
+        controls.target.copy(isoLookAt);
+        controls.update();
+      }
+
+      // Smooth Camera Flight Transition Helper (GSAP)
+      function flyCameraTo(camTargetPos, lookAtTargetPos, duration = 1.6) {
+        if (typeof gsap === 'undefined') {
+          camera.position.copy(camTargetPos);
+          if (controls) controls.target.copy(lookAtTargetPos);
+          return;
+        }
+
+        gsap.killTweensOf(camera.position);
+        if (controls) gsap.killTweensOf(controls.target);
+
+        gsap.to(camera.position, {
+          x: camTargetPos.x,
+          y: camTargetPos.y,
+          z: camTargetPos.z,
+          duration: duration,
+          ease: 'power2.inOut'
+        });
+
+        if (controls) {
+          gsap.to(controls.target, {
+            x: lookAtTargetPos.x,
+            y: lookAtTargetPos.y,
+            z: lookAtTargetPos.z,
+            duration: duration,
+            ease: 'power2.inOut'
+          });
+        }
+      }
+
+      // 3. Crisp Architectural Lighting
       const ambientLight = new THREE.AmbientLight(0x0E3A4B, 1.6);
       scene.add(ambientLight);
 
@@ -1187,7 +1226,7 @@
       scene.add(ambSirenRed);
       scene.add(ambSirenBlue);
 
-      // 3. Ground Asphalt & Holographic Radar Floor
+      // 4. Ground Asphalt & Holographic Radar Floor
       const asphaltGeo = new THREE.PlaneGeometry(140, 140);
       const asphaltMat = new THREE.MeshStandardMaterial({
         color: 0x07151E,
@@ -1200,7 +1239,6 @@
       asphaltPlane.receiveShadow = true;
       scene.add(asphaltPlane);
 
-      // Grid helper for God's Eye aesthetic
       const gridHelper = new THREE.GridHelper(60, 30, 0x14B8A6, 0x082F3B);
       gridHelper.position.y = 0.02;
       scene.add(gridHelper);
@@ -1217,7 +1255,7 @@
       sonarMesh.position.y = 0.04;
       scene.add(sonarMesh);
 
-      // 4. Central Neural Core (عقل واصل المركزي)
+      // 5. Central Neural Core (عقل واصل المركزي)
       const brainGroup = new THREE.Group();
       brainGroup.position.copy(brainPos);
       scene.add(brainGroup);
@@ -1245,7 +1283,7 @@
       brainGroup.add(ring2);
       brainGroup.add(ring3);
 
-      // 5. Realistic Street Incident (Fire, Reticle & Water Spray)
+      // 6. Realistic Street Incident (Fire, Reticle & Water Spray)
       const incidentGroup = new THREE.Group();
       incidentGroup.position.copy(incidentPos);
       scene.add(incidentGroup);
@@ -1318,7 +1356,7 @@
       const smokeParticles = new THREE.Points(smokeGeo, smokeMat);
       incidentGroup.add(smokeParticles);
 
-      // High-Pressure Water Jet / Extinguishing Foam
+      // High-Pressure Water Jet
       const waterCount = 130;
       const waterGeo = new THREE.BufferGeometry();
       const waterPos = new Float32Array(waterCount * 3);
@@ -1351,7 +1389,7 @@
       const checkRing = new THREE.Mesh(checkGeo, checkMat);
       checkmarkGroup.add(checkRing);
 
-      // 6. Citizen WhatsApp Mobile Beam & Traveling Photon
+      // 7. Citizen WhatsApp Mobile Beam & Traveling Photon
       const whatsappBeamGeo = new THREE.CylinderGeometry(0.08, 0.08, 14, 8);
       const whatsappBeamMat = new THREE.MeshBasicMaterial({ color: 0x10B981, transparent: true, opacity: 0 });
       const whatsappBeam = new THREE.Mesh(whatsappBeamGeo, whatsappBeamMat);
@@ -1364,7 +1402,7 @@
       dataPhoton.visible = false;
       scene.add(dataPhoton);
 
-      // 7. Emergency Response Vehicles (Fire Truck & Ambulance)
+      // 8. Emergency Response Vehicles (Fire Truck & Ambulance)
       const hqPos = new THREE.Vector3(14, 0, -8);
       const truckGroup = new THREE.Group();
       truckGroup.position.copy(hqPos);
@@ -1394,7 +1432,7 @@
       routeLine.computeLineDistances();
       scene.add(routeLine);
 
-      // 8. Autonomous City Moving Cars
+      // 9. Autonomous City Moving Cars
       const carsGroup = new THREE.Group();
       scene.add(carsGroup);
       const cars = [];
@@ -1429,7 +1467,7 @@
         cars.push(car);
       }
 
-      // 9. HIGH REALISM GLB LOADER (Self-Contained Embedded Binary GLBs)
+      // 10. HIGH REALISM GLB LOADER
       let loadedModelCount = 0;
       const totalModelsToLoad = 4;
       let realStreetModel = null;
@@ -1495,34 +1533,30 @@
         );
       }
 
-      // Load 1: Real Textured City Street (street.glb - 17MB)
       loadGLB('/models/street.glb', 48, (pivot) => {
         realStreetModel = pivot;
         realStreetModel.position.set(0, 0, 0);
         scene.add(realStreetModel);
       });
 
-      // Load 2: Real Heavy Municipal Fire Truck (fire-truck.glb - 44MB)
       loadGLB('/models/fire-truck.glb', 4.6, (pivot) => {
         realFireTruckModel = pivot;
         realFireTruckModel.rotation.y = Math.PI / 2;
         truckGroup.add(realFireTruckModel);
       });
 
-      // Load 3: Real Emergency Ambulance (ambulance.glb - 6.3MB)
       loadGLB('/models/ambulance.glb', 3.4, (pivot) => {
         realAmbulanceModel = pivot;
         realAmbulanceModel.rotation.y = Math.PI / 2;
         ambGroup.add(realAmbulanceModel);
       });
 
-      // Load 4: Real Fire & Smoke Geometry (fire-smoke.glb)
       loadGLB('/models/fire-smoke.glb', 3.8, (pivot) => {
         realFireModel = pivot;
         incidentGroup.add(realFireModel);
       });
 
-      // 10. CINEMATIC SCENARIOS & DYNAMIC CAMERA ANGLES
+      // 11. CINEMATIC SCENARIOS & DYNAMIC CAMERA POSITIONS
       const scenarios = [
         {
           badge: '🚨 السيناريو 1: رصد حريق الشارع',
@@ -1534,7 +1568,7 @@
           stat2: 'مستوى الخطر: حرج للغاية',
           waCitizen: 'في حريق كشك كهرباء بشارع المعاهدة قدام المدرسة 📍📸',
           waBot: '⚠️ جاري استلام البلاغ والتحقق من الموقع الجغرافي...',
-          camPos: new THREE.Vector3(-7.0, 3.2, 10.8),
+          camPos: new THREE.Vector3(-6.0, 3.5, 10.5),
           lookAt: new THREE.Vector3(-8.5, 1.8, 5.5)
         },
         {
@@ -1560,7 +1594,7 @@
           stat2: 'سرعة التحليل: 80ms مع منع التكرار',
           waCitizen: 'أنا بتابع حالة البلاغ برقم SBL-K7HN3R',
           waBot: 'تم اعتماد البلاغ وإصدار أمر تكليف فوري لوحدة إطفاء السنبلاوين 🚒',
-          camPos: new THREE.Vector3(0, 15, 13),
+          camPos: new THREE.Vector3(0, 16, 14),
           lookAt: new THREE.Vector3(0, 11, 0)
         },
         {
@@ -1573,7 +1607,7 @@
           stat2: 'الأضواء: سارينة دوارة حمراء وزرقاء 🚨',
           waCitizen: 'سامع صوت السارينة.. الفريق وصل للشارع 🚨',
           waBot: 'شاحنة الإطفاء وصلت الموقع الآن وبدأت أعمال السيطرة والإخماد 🚒',
-          camPos: new THREE.Vector3(0.5, 5.5, 12.0),
+          camPos: new THREE.Vector3(0.5, 5.0, 11.5),
           lookAt: new THREE.Vector3(-4.0, 1.8, 5.5)
         },
         {
@@ -1586,7 +1620,7 @@
           stat2: 'تقييم المواطن: ⭐⭐⭐⭐⭐',
           waCitizen: 'شكراً جداً ليكم! النار انطفت والمكان اتأمن بالكامل ⭐⭐⭐⭐⭐',
           waBot: 'تم إغلاق البلاغ بنجاح في 14 دقيقة! شكراً لمشاركتك الإيجابية في حماية مدينتك 💚',
-          camPos: new THREE.Vector3(-6.5, 3.5, 9.5),
+          camPos: new THREE.Vector3(-6.2, 3.2, 9.2),
           lookAt: new THREE.Vector3(-8.5, 1.2, 5.5)
         }
       ];
@@ -1621,8 +1655,7 @@
         updateStepUI(currentStep);
 
         const sc = scenarios[stepIdx];
-        targetCamPos.copy(sc.camPos);
-        targetLookAt.copy(sc.lookAt);
+        flyCameraTo(sc.camPos, sc.lookAt, 1.8);
 
         if (stepIdx === 0) {
           isWaterSpraying = false;
@@ -1703,17 +1736,13 @@
 
       window.setCameraPreset = function(preset) {
         if (preset === 'ISO') {
-          targetCamPos.set(-14, 18, 22);
-          targetLookAt.set(-2, 1, 3);
+          flyCameraTo(isoCamPos, isoLookAt, 1.8);
         } else if (preset === 'FIRE') {
-          targetCamPos.set(-7.0, 3.2, 10.8);
-          targetLookAt.set(-8.5, 1.8, 5.5);
+          flyCameraTo(new THREE.Vector3(-6.0, 3.5, 10.5), new THREE.Vector3(-8.5, 1.8, 5.5), 1.8);
         } else if (preset === 'TRUCK') {
-          targetCamPos.set(truckGroup.position.x + 4, 3.5, truckGroup.position.z + 6);
-          targetLookAt.set(truckGroup.position.x, 1.5, truckGroup.position.z);
+          flyCameraTo(new THREE.Vector3(truckGroup.position.x + 3.5, 3.2, truckGroup.position.z + 5.5), new THREE.Vector3(truckGroup.position.x, 1.4, truckGroup.position.z), 1.8);
         } else if (preset === 'BRAIN') {
-          targetCamPos.set(0, 15, 13);
-          targetLookAt.set(0, 11, 0);
+          flyCameraTo(new THREE.Vector3(0, 16, 14), new THREE.Vector3(0, 11, 0), 1.8);
         }
       };
 
@@ -1740,62 +1769,10 @@
       }
 
       window.reset3DCamera = function() {
-        targetCamPos.copy(isoCamPos);
-        targetLookAt.copy(isoLookAt);
+        flyCameraTo(isoCamPos, isoLookAt, 1.8);
       };
 
-      // 11. Interactive Damped Orbit Controls (Mouse & Touch)
-      let mouseX = 0;
-      let mouseY = 0;
-      let targetRotX = 0;
-      let targetRotY = 0;
-      let isDragging = false;
-      let prevMousePos = { x: 0, y: 0 };
-
-      container.addEventListener('mousemove', (e) => {
-        const rect = container.getBoundingClientRect();
-        mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouseY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-        if (!isDragging) {
-          targetRotY = mouseX * 0.18;
-          targetRotX = -mouseY * 0.1;
-        }
-      });
-
-      container.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        prevMousePos = { x: e.clientX, y: e.clientY };
-      });
-
-      window.addEventListener('mouseup', () => { isDragging = false; });
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        const deltaX = e.clientX - prevMousePos.x;
-        const deltaY = e.clientY - prevMousePos.y;
-        targetRotY += deltaX * 0.005;
-        targetRotX += deltaY * 0.005;
-        prevMousePos = { x: e.clientX, y: e.clientY };
-      });
-
-      container.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-          isDragging = true;
-          prevMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-      }, { passive: true });
-
-      container.addEventListener('touchmove', (e) => {
-        if (!isDragging || e.touches.length !== 1) return;
-        const deltaX = e.touches[0].clientX - prevMousePos.x;
-        const deltaY = e.touches[0].clientY - prevMousePos.y;
-        targetRotY += deltaX * 0.005;
-        targetRotX += deltaY * 0.005;
-        prevMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }, { passive: true });
-
-      window.addEventListener('touchend', () => { isDragging = false; });
-
-      // 12. 3D Projector Screen Pins (Update HTML Pin Coordinates)
+      // 12. 3D Projector Screen Pins
       function update3DPins() {
         const halfW = container.clientWidth / 2;
         const halfH = container.clientHeight / 2;
@@ -1822,21 +1799,15 @@
         });
       }
 
-      // 13. High-Precision 60FPS Render & Physics Loop
+      // 13. High-Precision 60FPS Render Loop
       const clock = new THREE.Clock();
 
       function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // Buttery Smooth Camera Interpolation (2026 Lerp Style)
-        camera.position.lerp(targetCamPos, 0.05);
-        currentLookAt.lerp(targetLookAt, 0.05);
-        camera.lookAt(currentLookAt);
-
-        // Smooth subtle interactive parallax tilt
-        scene.rotation.y += (targetRotY - scene.rotation.y) * 0.04;
-        scene.rotation.x += (targetRotX - scene.rotation.x) * 0.04;
+        // Update OrbitControls with smooth damping
+        if (controls) controls.update();
 
         // Sonar expanding radar ring
         const sonarScale = 1 + (time * 1.5) % 15;
