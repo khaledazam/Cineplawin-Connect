@@ -67,7 +67,7 @@ sequenceDiagram
     C->>B: Uploads issue photo 📸
     B-->>C: Prompts for Location Pin 📍 (or text address / "Skip")
     C->>B: Shares GPS Pin OR types Street Address
-    Note over B: System auto-submits instantly (cuts drop-off by 22%)
+    Note over B: System auto-submits instantly (no confirmation cliff)
     B-->>C: ✅ Confirmed! Tracking Code: SBL-K7HN3R
     Note over D: Report instantly pops up in dashboard (🔴 NEW)
     S->>D: Opens report drawer, clicks Quick Canned Response [Technician Dispatched]
@@ -78,9 +78,9 @@ sequenceDiagram
 ```
 
 ### Key Field Adaptations for Egyptian Reality:
-* **Streamlined 5-Step Funnel (No Drop-off Cliff):** Auto-submits immediately upon receiving the location pin or address, eliminating the manual confirmation step that previously caused 25% of drafts to expire unsubmitted.
-* **Smart Text Address Fallback:** If citizens cannot send a GPS pin, they can simply type their street address (e.g., *"شارع المحطة قدام الجامع"*); the bot captures it into the description without blocking the flow.
-* **Voice Note Ingestion:** Audio messages sent during the description step are captured directly into MinIO storage and linked to the ticket.
+* **Streamlined 5-Step Funnel:** Auto-submits immediately upon receiving the location pin or address, eliminating the redundant confirmation step.
+* **Smart Text Address Fallback:** If citizens cannot send a GPS pin, they can simply type their street address (e.g., *"شارع المحطة قدام الجامع"*); the bot captures it into a dedicated `addressText` column without blocking the flow.
+* **Text-First Lean Scope (v1):** Focuses strictly on text descriptions and photos; voice note audio transcoding is deferred to v2 to eliminate Law 151 biometric classification and reduce developer hours.
 * **Fuzzy Arabic Intent Matching:** Accepts typos and colloquial variations for navigation (`الغاء`, `خلاص`, `مش عايز`, `ارجع`, `معيش`, `اعتراض`).
 * **48-Hour Dispute Reopening:** Citizens can reply with *"اعتراض"* (Object) within 48 hours of resolution to automatically reopen the ticket if an issue was falsely closed.
 * **Staff Dashboard Ergonomics:** Features 1-click **Quick Canned Responses** and an **Adaptive Mobile Card Feed** for receptionists working from smartphones.
@@ -221,14 +221,14 @@ The project is structured into four 1-week sprints (31 hours/week) designed spec
 
 | Metric | Target | Verification Method |
 |---|:---:|---|
-| **Report Completion Rate** | $\ge 70\%$ | Ratio of submitted `Report` records to created `ReportDraft` records. |
+| **Report Completion Rate** | $\ge 65\%$ | Ratio of submitted `Report` records to created `ReportDraft` records. |
 | **Response Time SLA** | $< 24\text{ hours}$ | Dashboard Headline KPI: Average time from `NEW` to `IN_PROGRESS`. |
 | **Zero Message Loss** | $100\%$ | $0$ dropped inbound messages in `InboxMessage` compared to Chatwoot logs. |
-| **Citizen Satisfaction** | $\ge 4.2 / 5$ | Qualitative random survey of citizens who used tracking codes. |
+| **Citizen Satisfaction** | $\ge 4.0 / 5$ | Qualitative random survey of citizens who used tracking codes. |
 | **Staff Usability** | $< 5\text{ mins/day}$ | Receptionist requires less than 5 minutes of daily triage time. |
 
 ---
 
 > **Blueprint Status:** This document represents the unified master blueprint for **Wassel (واصل)**. It is stored in the repository at:  
-> [docs/EXECUTIVE-MASTER-PLAN.md](file:///d:/Cineplawin-Connect/docs/EXECUTIVE-MASTER-PLAN.md)  
+> [docs/EXECUTIVE-MASTER-PLAN.md](./docs/EXECUTIVE-MASTER-PLAN.md)  
 > Ready for sharing with partners, municipal leadership, and technical team members.

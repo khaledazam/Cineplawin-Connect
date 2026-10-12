@@ -451,6 +451,7 @@ model Report {
   contactId      String       @db.Uuid
   categoryId     String       @db.Uuid
   description    String       @db.VarChar(1000)
+  addressText    String?      @db.VarChar(255) // street / landmark text input fallback
   latitude       Decimal?     @db.Decimal(8, 5) // citizen-supplied, not verified
   longitude      Decimal?     @db.Decimal(8, 5)
   status         ReportStatus @default(NEW)

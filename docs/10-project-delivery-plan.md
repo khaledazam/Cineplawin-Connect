@@ -2,13 +2,17 @@
 
 ## 10.1 Delivery Methodology & Time Allocation
 
-To deliver Wassel (واصل) v1 within the target window of **120–160 developer hours**, the project is partitioned into **four 1-week sprints (31 hours/week = 124 total hours)**. 
+To deliver Wassel (واصل) v1 within the target window of **120–160 developer hours**, the project is partitioned into **four logical sprints (totaling 124 focused hours)**. 
+
+> **Realistic Scheduling Note for Solo Part-Time Execution:**  
+> If dedicated full-time (31h/week), this spans **4 calendar weeks**.  
+> In a part-time capacity (15–20h/week realistic developer bandwidth), this spans **7 to 8 calendar weeks**.
 
 ### Sprints Overview
 
 ```mermaid
 gantt
-    title Wassel v1 Solo Developer Timeline (124 Hours)
+    title Wassel v1 Solo Developer Timeline (124 Focused Hours)
     dateFormat  YYYY-MM-DD
     section Sprint 1: Foundation & Ingestion
     Infra & DB Setup (14h)           :a1, 2026-10-12, 3d
@@ -19,7 +23,7 @@ gantt
     section Sprint 3: Staff Dashboard
     Next.js App & Auth (10h)         :c1, 2026-10-26, 2d
     Report Inbox & Drawer (12h)      :c2, after c1, 3d
-    Headline KPIs & CSV (8h)         :c3, after c2, 2d
+    Headline KPIs (8h)               :c3, after c2, 2d
     section Sprint 4: Hardening & Pilot
     Cross-Tenant CI Gate & QA (14h)  :d1, 2026-11-02, 3d
     VPS Deploy & Pilot Training (16h):d2, after d1, 4d
@@ -45,7 +49,7 @@ gantt
   2. **Database Provisioning (8h)**: Run `schema.prisma` migrations, apply `constraints-and-roles.sql` (Section A & B), test non-owner `cc_app` role connection and `cc_shadow` migrations.
   3. **NestJS Modular Core (6h)**: Initialize NestJS monolith with Fastify adapter, configure ConfigModule, Zod validation pipe, and Pino structured logger.
   4. **Chatwoot Ingestion Webhook (12h)**:
-     - Implement `/api/v1/webhooks/chatwoot/:channelId`.
+     - Implement `/api/v1/webhooks/chatwoot/:channelSecret`.
      - Implement timing-safe webhook secret verification.
      - Implement atomic deduplication via `InboxMessage` table (`@@unique([tenantId, provider, providerMessageId])`).
      - Push raw inbound message to BullMQ queue `incoming-messages`.

@@ -93,31 +93,31 @@ IMPACT │
 * **Contingency / Fallback**:
   - Trigger `/api/v1/contacts/:id/erase` immediately upon any formal privacy complaint; produce the cryptographic AuditEvent receipt as legal evidence of compliance.
 
-#### Risk R-08: Solo Developer Incapacitation / Time Slippage
-* **Description**: Developer falls ill or hits an architectural roadblock, causing the 124-hour sprint schedule to slip.
-* **Probability**: Low | **Impact**: High
+#### Risk R-08: Solo Developer Incapacitation / Time Slippage (Part-Time Reality)
+* **Description**: Developer works 15–20 hours/week, but scope expansion causes delivery timeline to slip beyond initial targets.
+* **Probability**: High | **Impact**: High
 * **Preventive Measure**:
-  - Modular monolith architecture ensures all components reside in a single repository with unified TypeScript types.
-  - The delivery plan incorporates a 36-hour buffer (124 planned vs. 160 max budget).
+  - Re-calibrated 8-week delivery plan at 16–18 hours/week (total ~135h realistic MVP budget).
+  - Scope discipline: Voice notes deferred to v2, public web tracking endpoint cut from v1, client-side CSV deferred.
+  - Modular monolith architecture ensures single-repo, zero-context-switching delivery.
 * **Contingency / Fallback**:
-  - If behind schedule at end of Sprint 2, cut the CSV export and settings UI from v1; manage tenant configuration directly via database seed scripts.
+  - If behind schedule at end of Sprint 2, immediately cut the internal settings UI from v1; seed tenant configuration directly via database scripts.
 
 ---
 
 ## 12.3 Catastrophic & "Black Swan" Scenarios (Extreme Readiness Protocols)
 
-Beyond standard bugs and operational friction, Wassel is hardened against 11 catastrophic operational, legal, geopolitical, and infrastructure crises:
+Beyond standard bugs and operational friction, Wassel is hardened against 10 catastrophic operational, legal, geopolitical, and infrastructure crises:
 
 ### 1. Legal & Sovereign Security Crises
 
-#### CS-01: Sensitive Political / National Security Keywords in Inbound Report
-* **Trigger:** A citizen submits a report mentioning sensitive state security keywords, political demonstrations, weapons, or sovereign officials.
-* **Blast Radius:** Staff viewing/leaking screenshots could expose the entire organization and municipal partners to national security prosecution under Egyptian Cybercrime and Anti-Terrorism laws.
-* **Automated Defense (Silent Security Quarantine Interceptor):**
-  - Inbound text filter scans for sensitive political/security token vectors via compiled regex.
-  - Automatically isolates the ticket into a `QUARANTINED` state: hidden from regular staff dashboards, technicians, and search queries.
-  - Generates a silent alert visible exclusively to the Super Admin (`LEGAL_REVIEW_REQUIRED`).
-  - Bot responds with an ultra-neutral acknowledgement: *"تم استلام رسالتك وإحالتها للإدارة المختصة"*. No sensitive details are ever echoed back via unencrypted WhatsApp outbox notifications.
+#### CS-01: Sovereign & Sensitive Terms of Service Enforcement
+* **Trigger:** A citizen submits non-civic political slogans or sovereign complaints outside municipal competence.
+* **Blast Radius:** Staff confusion or public misunderstanding of municipal mandate.
+* **Operational Defense (Terms of Service Clear Boundary):**
+  - Bot terms of service state upfront that Wassel is dedicated strictly to municipal maintenance and clinic operations.
+  - Standard neutral out-of-scope template informs the citizen: *"شكراً لتواصلك. هذه المنصة مخصصة لمتابعة الخدمات البلدية والصيانة والمرافق فقط."*
+  - No automated regex censoring that could falsely suppress legitimate public safety reports.
 
 #### CS-02: Law Enforcement Search Warrant / Subpoena (طلب ضبط قضائي)
 * **Trigger:** Public Prosecution (النيابة العامة) or Telecom Police formally issues an official warrant requesting citizen identity and activity logs for a criminal investigation.

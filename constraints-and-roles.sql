@@ -49,6 +49,9 @@ GRANT USAGE ON SCHEMA public TO cc_app;
 
 -- ---------- B. POST-MIGRATION (append to first migration, runs as cc_owner) --
 
+-- B0. Required Extensions -----------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- B1. Integrity checks ---------------------------------------------------------
 
 ALTER TABLE "Tenant"
@@ -83,9 +86,11 @@ ALTER TABLE "Report"
     CHECK (char_length(btrim("description")) > 0),
   ADD CONSTRAINT report_location_pair
     CHECK (("latitude" IS NULL) = ("longitude" IS NULL)),
+  ADD CONSTRAINT report_has_location_consistent
+    CHECK ("hasLocation" = ("latitude" IS NOT NULL)),
   ADD CONSTRAINT report_location_range
     CHECK ("latitude" BETWEEN -90 AND 90 AND "longitude" BETWEEN -180 AND 180),
-  -- keeps the average-resolution-time number honest
+  -- keeps the average-resolution-time number honest; reopen/undo MUST reset resolvedAt = NULL
   ADD CONSTRAINT report_resolved_at_matches_status
     CHECK (("status" = 'RESOLVED') = ("resolvedAt" IS NOT NULL)),
   ADD CONSTRAINT report_rejection_has_message
@@ -188,7 +193,7 @@ GRANT SELECT, INSERT ON "ReportEvent", "AuditEvent" TO cc_app;
 --    and retired keys, while a background job re-encrypts `phoneEnc` and updates `phoneHash` in place.
 --
 -- RIGHT-TO-ERASURE / ANONYMIZATION PROCEDURE (Item 4):
--- When a citizen exercises their Right to Erasure under Egyptian PDPL (Law 151/2020):
+-- When a citizen exercises their legal Right to Erasure under Egyptian PDPL (Law 151/2020):
 -- 1. Session Context:
 --    The erasure script runs via directUrl as `cc_owner`. If RLS is enabled (Section C),
 --    it MUST first set the tenant context:
@@ -200,24 +205,44 @@ GRANT SELECT, INSERT ON "ReportEvent", "AuditEvent" TO cc_app;
 --             "phoneHash"    = encode(gen_random_bytes(32), 'hex'), -- overwrite HMAC blind index
 --             "anonymizedAt" = clock_timestamp()
 --       WHERE "id" = '<contact_id>' AND "tenantId" = '<target_tenant_id>';
--- 3. Free-Text Redaction in Reports & Events:
---    Redact any personal names or addresses in reports linked to this contact:
+-- 3. Comprehensive Data Scrub (Reports, Drafts, Inbound Messages & Attachments):
+--    a. Redact Report free text, address, and coordinates:
 --      UPDATE "Report"
---         SET "description" = '[تم حذف البيانات الشخصية بموجب قانون حماية البيانات الشخصية ١٥١ لسنة ٢٠٢٠]'
+--         SET "description"  = '[تم حذف البيانات الشخصية بموجب قانون حماية البيانات الشخصية ١٥١ لسنة ٢٠٢٠]',
+--             "addressText"  = NULL,
+--             "latitude"     = NULL,
+--             "longitude"    = NULL,
+--             "hasLocation"  = false
 --       WHERE "contactId" = '<contact_id>' AND "tenantId" = '<target_tenant_id>';
---    (Note: If mutating ReportEvent notes, disable trigger `report_event_append_only` inside the
---     transaction only, redact, and immediately re-enable).
+--    b. Scrub unsubmitted / active drafts:
+--      UPDATE "ReportDraft"
+--         SET "description"  = '[تم الحذف]',
+--             "latitude"     = NULL,
+--             "longitude"    = NULL,
+--             "stepContext"  = '{}'
+--       WHERE "tenantId" = '<target_tenant_id>'
+--         AND "conversationId" IN (SELECT "id" FROM "Conversation" WHERE "contactId" = '<contact_id>');
+--    c. Scrub raw inbound messages (InboxMessage):
+--      UPDATE "InboxMessage"
+--         SET "normalized" = '{"redacted": true}'
+--       WHERE "tenantId" = '<target_tenant_id>'
+--         AND "chatwootConversationId" IN (SELECT "chatwootConversationId" FROM "Conversation" WHERE "contactId" = '<contact_id>');
+--    d. Mark physical attachments as PURGED in DB:
+--      UPDATE "Attachment"
+--         SET "status" = 'PURGED', "objectKey" = NULL, "providerMediaRef" = NULL
+--       WHERE "tenantId" = '<target_tenant_id>'
+--         AND "draftId" IN (SELECT "id" FROM "ReportDraft" WHERE "conversationId" IN (SELECT "id" FROM "Conversation" WHERE "contactId" = '<contact_id>'));
 -- 4. Audit Trail:
---    Insert an AuditEvent recording the legal compliance action:
+--    Insert an AuditEvent recording the legal compliance action (logged as SYSTEM or authorized USER):
 --      INSERT INTO "AuditEvent" ("id", "tenantId", "actorType", "actorId", "action", "targetType", "targetId", "meta", "createdAt")
---      VALUES (gen_random_uuid(), '<target_tenant_id>', 'USER', '<operator_user_id>', 'contact.erased_pdpl', 'Contact', '<contact_id>', '{"legalBasis":"Law 151/2020"}', clock_timestamp());
+--      VALUES (gen_random_uuid(), '<target_tenant_id>', 'SYSTEM', '<operator_user_id>', 'contact.erased_pdpl', 'Contact', '<contact_id>', '{"legalBasis":"Law 151/2020"}', clock_timestamp());
 -- 5. Mandatory External & Unstructured Data Purges:
 --    - Chatwoot: Invoke Chatwoot API (`DELETE /api/v1/accounts/{acc}/contacts/{chatwootContactId}`)
 --      to delete the conversation history and customer profile.
---    - Object Storage: Permanently delete all photos uploaded by this contact in S3/MinIO
+--    - Object Storage: Permanently delete all photos in S3/MinIO
 --      (`s3://bucket/tenants/{tenantId}/drafts/{draftId}/*`).
---    - Backups Policy: Backups containing legacy snapshots are encrypted at rest, access-restricted,
---      and subject to a 30-day rolling rotation lifecycle, fulfilling PDPL compliance upon backup expiry.
+--    - Replay Log on Restore: Documented in runbook; upon restoring from any older backup,
+--      re-play erasure audit records to re-anonymize contacts before opening production traffic.
 -- -----------------------------------------------------------------------------
 
 

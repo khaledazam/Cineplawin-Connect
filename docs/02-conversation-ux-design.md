@@ -90,23 +90,17 @@ Bot:
 - **Duplicate Ticket Detector (Human Repetition Error)**:
   - If this citizen (`phoneHash`) has an open report in the same category created within the last 2 hours:
     - Bot prompts: *"⚠️ لاحظنا أن عندك بلاغ مسجل بالفعل لنفس المشكلة برقم [SBL-XXXXXX] وحالته: جاري العمل 🔵. اكتب (1) لتأكيد أن ده بلاغ جديد مختلف، أو ابعت تفاصيل إضافية هنضيفها لنفس البلاغ."*
-- **Voice Note / Audio input (Persona Umm Ahmed Support)**:
-  - If citizen sends a voice note (audio message):
-    - System accepts it, downloads audio to MinIO bucket.
-    - Sets `description = "[تسجيل صوتي مرفق من المواطن]"`.
-    - Bot replies:
+- **Audio Voice Notes (Deferred to v2 for Legal & Scope Optimization)**:
+  - In v1, to prevent legal complexity under Egyptian Law 151/2020 (biometric categorization of citizen voice recordings) and eliminate audio transcoding overhead:
+  - If a citizen sends a voice note during description:
+    - Bot replies politely:
       ```
       Bot:
-      🎤 تمام، استلمنا رسالتك الصوتية وسجلناها في البلاغ!
-
-      📸 لو عندك صورة للمشكلة ابعتها دلوقتي — الصورة بتساعدنا نفهم المشكلة أسرع
-
-      أو ابعت:
-      ⏭️ "تخطي" لو مفيش صورة
-      ↩️ "رجوع" لتعديل الوصف
-      ❌ "إلغاء" لإلغاء البلاغ
+      🎤 عفواً، المنظومة تستقبل الرسائل المكتوبة فقط في هذه المرحلة.
+      
+      برجاء كتابة وصف مختصر للمشكلة لمساعدة فريق الصيانة 📝
       ```
-    - State transitions smoothly to: `AWAITING_PHOTO`.
+    - State remains: `AWAITING_DESCRIPTION`.
 
 ---
 
@@ -165,8 +159,7 @@ Bot:
    - Auto-submits the report immediately.
 2. **On Text Address Received (Smart Address Fallback):**
    - If citizen types a text address instead of a GPS pin (e.g. *"شارع المحطة قدام الجامع الكبير"*):
-   - System accepts it without error, sets `locationSkipped = true`, and appends address text to `description`:
-     `description = description + " | [العنوان المدخل]: " + text`.
+   - System accepts it without error, stores text directly in `Report.addressText` (max 255 chars, avoiding description overflow), sets `locationSkipped = true`.
    - Auto-submits the report immediately.
 3. **On "تخطي" / Skip Intent Received:**
    - Sets `locationSkipped = true`.
@@ -190,7 +183,7 @@ Bot:
 💡 لمتابعة البلاغ وتلقي التحديثات مجاناً، تقدر تبعتلنا كلمة "متابعة" بعد يوم لتجديد المحادثة، أو اختار (2) من القائمة الرئيسية ✉️
 ```
 
-**State:** → `IDLE` (Eliminates the separate confirmation step and cuts drop-off cliff by 22%).
+**State:** → `IDLE` (Eliminates the redundant confirmation prompt and streamlines citizen funnel).
 
 ---
 

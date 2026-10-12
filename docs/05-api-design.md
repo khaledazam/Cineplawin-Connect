@@ -63,6 +63,7 @@
 | GET | `/api/v1/reports` | TA, AG | List reports (paginated, filterable, sortable) |
 | GET | `/api/v1/reports/:id` | TA, AG | Get report detail with events and attachments |
 | PATCH | `/api/v1/reports/:id/status` | TA, AG | Change report status (+ optional citizenMessage) |
+| POST | `/api/v1/reports/:id/undo-status` | TA, AG | 15s undo grace window to revert status & cancel outbound WhatsApp |
 | PATCH | `/api/v1/reports/:id/assign` | TA | Assign report to an agent |
 
 ### Report Events
@@ -77,6 +78,13 @@
 | Method | Path | Roles | Purpose |
 |---|---|---|---|
 | GET | `/api/v1/attachments/:id/url` | TA, AG | Get a signed URL for viewing the attachment (short-lived, 5 min) |
+| DELETE | `/api/v1/reports/:id/attachments/:attachmentId` | TA, AG | Instantly purge inappropriate / accidental citizen photo from MinIO |
+
+### Compliance & Privacy (PDPL Law 151/2020)
+
+| Method | Path | Roles | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/contacts/:id/erase` | TA (Admin) | Execute 1-click legal erasure of citizen personal data & photos |
 
 ### Analytics (v1 basic — Should Have S4)
 
@@ -232,13 +240,13 @@
 
 **Allowed transitions:**
 
-| From | Allowed To |
-|---|---|
-| NEW | IN_REVIEW, REJECTED |
-| IN_REVIEW | IN_PROGRESS, RESOLVED, REJECTED |
-| IN_PROGRESS | RESOLVED, REJECTED |
-| RESOLVED | — (terminal) |
-| REJECTED | — (terminal) |
+| From | Allowed To | Rules / Side Effects |
+|---|---|---|
+| NEW | IN_REVIEW, REJECTED | Normal triage |
+| IN_REVIEW | IN_PROGRESS, RESOLVED, REJECTED | Normal triage |
+| IN_PROGRESS | RESOLVED, REJECTED | Normal triage (sets `resolvedAt = NOW()` if RESOLVED) |
+| RESOLVED | IN_PROGRESS | **Allowed strictly via:** (1) Staff Undo within 15s window, or (2) Citizen Dispute within 48h (`"اعتراض"`). **Must reset `resolvedAt = NULL`**. |
+| REJECTED | — (terminal) | Terminal |
 
 **Response (200):**
 ```json
@@ -408,10 +416,11 @@
 
 **Mechanics:**
 1. Validates that current status change occurred within the last 15 seconds (`now() - updatedAt <= 15s`).
-2. Cancels the delayed BullMQ outbox job `notify-status-${id}-${version}` if not yet processed.
+2. Updates pending `Notification` record (`WHERE reportId = :id AND status = 'PENDING'`) to `status = 'CANCELLED'`. Because `cc_app` has UPDATE privilege (not DELETE) on `Notification`, this avoids permission denial and provides a clean audit record.
 3. Reverts `Report.status` to its previous state stored in the latest `ReportEvent.fromStatus`.
-4. Appends a new `ReportEvent` of type `STATUS_CHANGED` with note: `"تم التراجع عن تغيير الحالة بواسطة الموظف خلال مهلة الـ 15 ثانية"`.
-5. Deletes the pending `Notification` record or marks it `CANCELLED`.
+4. Resets `resolvedAt = NULL` if the status was `RESOLVED`.
+5. Appends a new `ReportEvent` of type `STATUS_CHANGED` with note: `"تم التراجع عن تغيير الحالة بواسطة الموظف خلال مهلة الـ 15 ثانية"`.
+6. Outbox worker exclusively processes `WHERE status = 'PENDING' AND nextAttemptAt <= NOW()`, ensuring zero WhatsApp messages are dispatched.
 
 **Response (200):**
 ```json
@@ -514,20 +523,20 @@ flowchart TD
     O --> P[Return 200]
 
     subgraph Worker
-        Q[process-inbound job] --> R[Acquire per-conversation lock]
+        Q[process-inbound job] --> R[Acquire lock with unique token: 15s lease]
         R --> S[Load Conversation + active ReportDraft]
         S --> T[Run bot state transition function]
-        T --> U[Persist state changes in transaction]
-        U --> V[Enqueue outbound reply job]
-        V --> W[Release lock]
+        T --> U[Atomic Transaction: Persist state + Enqueue Outbox + Mark InboxMessage PROCESSED]
+        U --> V[Commit Transaction]
+        V --> W[Release lock via Lua compare-and-delete]
     end
 
     subgraph Outbound
-        X[send-reply job] --> Y[Build reply message text]
+        X[outbox-poller job] --> Y[SELECT PENDING Notifications nextAttemptAt <= NOW()]
         Y --> Z[POST to Chatwoot Messages API]
         Z --> AA{Success?}
-        AA -->|Yes| AB[Mark InboxMessage PROCESSED]
-        AA -->|No| AC[Retry with backoff]
+        AA -->|Yes| AB[Mark Notification SENT]
+        AA -->|No| AC[Retry with exponential backoff]
     end
 ```
 
@@ -559,10 +568,9 @@ export function normalizeText(rawText: string): string {
 
 export type NormalizedMessage =
   | { kind: 'text'; text: string }
-  | { kind: 'audio'; mediaUrl: string; mimeType: string } // Voice note support for Persona Umm Ahmed
   | { kind: 'image'; mediaUrl: string; mimeType: string }
   | { kind: 'location'; latitude: number; longitude: number; name?: string; address?: string }
-  | { kind: 'unsupported'; originalType: string };
+  | { kind: 'unsupported'; originalType: string }; // Audio voice notes deferred to v2 to avoid Law 151 biometric classification and audio transcode overhead
 ```
 
 This decouples the bot state machine from Chatwoot's payload format. Media files (both images and audio voice notes) are fetched by the worker directly from Chatwoot's authenticated attachment URL (`mediaUrl`), not from Meta Cloud API.
@@ -582,39 +590,48 @@ Two layers:
 To prevent runtime failures under extreme conditions (as proven in stress-test scenarios), the BullMQ worker applies these rules:
 
 ```typescript
-// 1. Rapid-Fire Message Debounce & Redis Distributed Locking (Scenario 1.1)
+// 1. Rapid-Fire Message Debounce & Redis Distributed Locking (Token-based Compare-and-Delete)
 async function processInboundJob(job: Job<{ conversationId: string; messageId: string }>) {
   const lockKey = `lock:conv:${job.data.conversationId}`;
-  const lock = await redis.set(lockKey, 'locked', 'NX', 'PX', 2500);
-  if (!lock) {
-    // Another worker is processing this conversation; delay job by 500ms
+  const lockToken = crypto.randomUUID();
+  // 15-second lease comfortably exceeds the 8s media download timeout
+  const acquired = await redis.set(lockKey, lockToken, 'NX', 'PX', 15000);
+  if (!acquired) {
     throw new DelayedError(500);
   }
 
   try {
-    // 2. Zombie Draft Auto-Expiry Guard (Scenario 1.2)
-    const activeDraft = await prisma.reportDraft.findFirst({
-      where: { conversationId: job.data.conversationId, status: 'ACTIVE' },
+    // 2. Transactional Idempotency Boundary:
+    // Bot state transition, outbox notification, and InboxMessage.status = 'PROCESSED'
+    // are ALWAYS committed in the exact same database transaction.
+    await prisma.$transaction(async (tx) => {
+      // 3. Zombie Draft Auto-Expiry Guard:
+      const activeDraft = await tx.reportDraft.findFirst({
+        where: { conversationId: job.data.conversationId, status: 'ACTIVE' },
+      });
+
+      if (activeDraft && activeDraft.expiresAt < new Date()) {
+        await tx.reportDraft.update({ where: { id: activeDraft.id }, data: { status: 'EXPIRED' } });
+        await tx.conversation.update({ where: { id: job.data.conversationId }, data: { botState: 'IDLE' } });
+      }
+
+      // Execute State Transition & Outbox record creation...
+      // Mark inbound message processed atomically
+      await tx.inboxMessage.update({
+        where: { id: job.data.messageId },
+        data: { status: 'PROCESSED', processedAt: new Date() }
+      });
     });
-
-    if (activeDraft && activeDraft.expiresAt < new Date()) {
-      await prisma.$transaction([
-        prisma.reportDraft.update({ where: { id: activeDraft.id }, data: { status: 'EXPIRED' } }),
-        prisma.conversation.update({ where: { id: job.data.conversationId }, data: { botState: 'IDLE' } }),
-      ]);
-      // Conversation returned to IDLE; inbound message will trigger main menu
-    }
-
-    // 3. Media Download Timeout with Resilient Fallback (Scenario 2.2)
-    // Downloads from Chatwoot media URL with strict 8-second AbortController
-    // If download times out, mark Attachment status = 'FAILED' and continue without crashing draft
-
-    // 4. Geo-Bounding Box Out-of-Bounds Flagging (Scenario 4.2)
-    // If citizen sends a location pin outside tenant.settings.geoBounds (e.g. outside Dakahlia),
-    // accept the pin but tag stepContext.isOutOfBounds = true to display a warning badge in dashboard.
-
   } finally {
-    await redis.del(lockKey);
+    // Atomic Compare-and-Delete Lua script ensures a worker only deletes its OWN lock
+    const luaScript = `
+      if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+      else
+        return 0
+      end
+    `;
+    await redis.eval(luaScript, 1, lockKey, lockToken);
   }
 }
 ```
@@ -625,14 +642,11 @@ When incoming traffic surges (e.g. viral Facebook post), the webhook receiver ch
 ```typescript
 const queueDepth = await incomingQueue.count();
 if (queueDepth > 500) {
-  // System under heavy viral surge: activate Degraded Mode
-  // Bypass heavy state-machine DB queries and emit instant calming message via Chatwoot
-  await chatwootClient.sendMessage(conversationId, {
-    content: "📍 أهلاً بك، يوجد ضغط بلاغات مرتفع حالياً في منطقتك. رسالتك مسجلة في الطابور وسنرد عليك خلال دقائق.",
-  });
-  // Enqueue with lower priority
+  // System under heavy surge: activate Ingestion-Only Mode.
+  // Ingest raw message to DB and enqueue with lower priority WITHOUT making redundant Chatwoot API calls
+  // (which would otherwise amplify congestion and risk rate-limiting).
   await incomingQueue.add('process', payload, { priority: 10 });
-  return { status: 'congested' };
+  return { status: 'congested_enqueued' };
 }
 ```
 
@@ -770,15 +784,15 @@ GET /api/v1/reports?sort=status,createdAt   // multi-sort
 | Limit | Value | Window | Action |
 |---|---|---|---|
 | Login endpoint | 20 | 15 min | Return 429 |
-| Webhook endpoint | 100 | 1 min | Return 429 (protects against malformed retries) |
+| Webhook endpoint | **EXEMPT from Global IP Limit** | N/A | Authenticated by `:channelSecret`. Chatwoot runs on a co-located container; applying a 100 req/min per-IP limit would throttle the entire municipality and violate the Zero Message Loss guarantee. |
 | All other endpoints | 300 | 1 min | Return 429 |
 
-**Implementation:** Redis sliding window or fixed window per IP. NestJS `@nestjs/throttler` module or custom guard.
+**Implementation:** Redis sliding window or fixed window per IP. NestJS `@nestjs/throttler` module or custom guard. The Webhook controller explicitly uses `@SkipThrottle()` for source IP and enforces channel secret verification + queue backpressure instead.
 
 ### Webhook Abuse Protection
 
-- Only accept webhooks from known paths (`:channelSecret` must hash-match a TenantChannel).
-- IP allowlist at reverse proxy level if Chatwoot is co-located.
+- Only accept webhooks from known paths (`:channelSecret` must match a verified TenantChannel).
+- Inbound backpressure: If queue depth exceeds 500, ingest payload immediately to DB (`InboxMessage`) without in-memory blocking.
 - Payload size limit: 1 MB (reject larger payloads before parsing).
 - JSON parsing with depth limit.
 
