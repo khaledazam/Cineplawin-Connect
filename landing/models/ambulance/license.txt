@@ -1,0 +1,11 @@
+Model Information:
+* title:	Ambulance
+* source:	https://sketchfab.com/3d-models/ambulance-b78313c16c9d46a7a67643245cf278d2
+* author:	mk2design (https://sketchfab.com/mk2design)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Ambulance" (https://sketchfab.com/3d-models/ambulance-b78313c16c9d46a7a67643245cf278d2) by mk2design (https://sketchfab.com/mk2design) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script>
     tailwind.config = {
@@ -244,6 +245,12 @@
           <div class="text-[10px] text-teal-400/80">TARGET COORD: 30.9571° N, 31.5218° E</div>
           <div class="text-[10px] text-teal-400/80">SECTOR: EL-MOAHADA ST. // ELEC-04</div>
           <div id="telemetryStatus" class="text-xs text-amber-300 font-bold mt-1">STATUS: SCANNING GRID...</div>
+        </div>
+
+        <!-- Real 3D Models Status Indicator (Top Right) -->
+        <div id="modelLoaderBadge" class="absolute top-5 right-5 p-2 px-3.5 rounded-xl glass-card bg-brand-dark/85 border border-teal-500/40 text-right font-mono text-[11px] text-teal-300 z-10 flex items-center gap-2 pointer-events-none shadow-lg">
+          <span id="modelLoaderDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+          <span id="modelLoaderText">⚡ جاري تحميل المجسمات الواقعية (المطافي، الإسعاف، الشارع، الحريق)...</span>
         </div>
 
         <!-- Floating Storyboard Narrative Card (Bottom Right) -->
@@ -1013,48 +1020,80 @@
       const telemetryStatus = document.getElementById('telemetryStatus');
       const playIcon = document.getElementById('playIcon');
       const playLabel = document.getElementById('playLabel');
+      const modelLoaderDot = document.getElementById('modelLoaderDot');
+      const modelLoaderText = document.getElementById('modelLoaderText');
 
       let currentStep = 0;
       let isAutoPlaying = true;
       let autoPlayInterval = null;
 
-      // 1. Scene, Camera, Renderer
+      // 1. Scene, Camera, Renderer (ACES Filmic Tone Mapping & Soft Shadows)
       const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x02131A, 0.016);
+      scene.fog = new THREE.FogExp2(0x02131A, 0.014);
 
       const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
       const defaultCamPos = { x: 0, y: 22, z: 26 };
       camera.position.set(defaultCamPos.x, defaultCamPos.y, defaultCamPos.z);
       camera.lookAt(0, 3, 0);
 
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
       renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      // 2. Lights
-      const ambientLight = new THREE.AmbientLight(0x062835, 2.0);
+      // 2. Realistic Cinematic Lighting
+      const ambientLight = new THREE.AmbientLight(0x093340, 1.8);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0x14B8A6, 1.8);
-      dirLight.position.set(15, 25, 20);
+      const hemiLight = new THREE.HemisphereLight(0x14B8A6, 0x02131A, 0.8);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0x5EEAD4, 1.6);
+      dirLight.position.set(20, 30, 20);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
       scene.add(dirLight);
 
-      const incidentLight = new THREE.PointLight(0xEF4444, 3.5, 20);
-      incidentLight.position.set(-8, 3, 5);
-      scene.add(incidentLight);
+      // Fire & Incident Flame Light (Flickers in realtime)
+      const incidentPos = new THREE.Vector3(-8.5, 0, 5.5);
+      const fireLight = new THREE.PointLight(0xFF5500, 4.0, 26);
+      fireLight.position.set(incidentPos.x, 2.8, incidentPos.z);
+      fireLight.castShadow = true;
+      scene.add(fireLight);
 
+      // Central Brain Cyber Light
       const brainLight = new THREE.PointLight(0x06B6D4, 4.0, 35);
       brainLight.position.set(0, 10, 0);
       scene.add(brainLight);
 
-      // 3. Ground Grid & Street Avenues (God's Eye Map)
+      // Emergency Sirens (Dynamic Realtime Red & Blue Strobe Beacons)
+      const truckSirenRed = new THREE.PointLight(0xFF0033, 0, 18);
+      const truckSirenBlue = new THREE.PointLight(0x0066FF, 0, 18);
+      scene.add(truckSirenRed);
+      scene.add(truckSirenBlue);
+
+      const ambSirenRed = new THREE.PointLight(0xFF0033, 0, 14);
+      const ambSirenBlue = new THREE.PointLight(0x0088FF, 0, 14);
+      scene.add(ambSirenRed);
+      scene.add(ambSirenBlue);
+
+      // 3. Cyber Ground Grid & Sonar Waves (God's Eye Map)
       const gridSize = 50;
-      const gridHelper = new THREE.GridHelper(gridSize, 30, 0x14B8A6, 0x073B4C);
-      gridHelper.position.y = 0;
+      const gridHelper = new THREE.GridHelper(gridSize, 28, 0x14B8A6, 0x073B4C);
+      gridHelper.position.y = 0.02;
       scene.add(gridHelper);
 
-      // Expanding Radar Sonar Wave on City Floor
-      const sonarGeo = new THREE.RingGeometry(0.5, 1.2, 48);
+      const sonarGeo = new THREE.RingGeometry(0.5, 1.4, 48);
       const sonarMat = new THREE.MeshBasicMaterial({
         color: 0x14B8A6,
         side: THREE.DoubleSide,
@@ -1063,41 +1102,46 @@
       });
       const sonarMesh = new THREE.Mesh(sonarGeo, sonarMat);
       sonarMesh.rotation.x = Math.PI / 2;
-      sonarMesh.position.y = 0.05;
+      sonarMesh.position.y = 0.06;
       scene.add(sonarMesh);
 
-      // 4. Holographic 3D City Wireframe Buildings
+      // 4. City Buildings & Urban Architecture Group
       const buildingsGroup = new THREE.Group();
       scene.add(buildingsGroup);
 
-      const buildingCount = 38;
+      const buildingCount = 34;
       const buildingMats = {
-        cyan: new THREE.MeshStandardMaterial({ color: 0x072A36, roughness: 0.3, metalness: 0.7, wireframe: false, transparent: true, opacity: 0.85 }),
-        edge: new THREE.LineBasicMaterial({ color: 0x14B8A6, transparent: true, opacity: 0.55 })
+        cyan: new THREE.MeshStandardMaterial({
+          color: 0x072A36,
+          roughness: 0.3,
+          metalness: 0.7,
+          transparent: true,
+          opacity: 0.82
+        }),
+        edge: new THREE.LineBasicMaterial({ color: 0x14B8A6, transparent: true, opacity: 0.5 })
       };
 
       for (let i = 0; i < buildingCount; i++) {
-        // Distribute around city perimeter avoiding central boulevard and incident corner
         const bx = (Math.random() - 0.5) * 36;
         const bz = (Math.random() - 0.5) * 36;
-        if (Math.abs(bx) < 3.5 || Math.abs(bz) < 3.5 || (Math.hypot(bx + 8, bz - 5) < 4)) continue;
+        if (Math.abs(bx) < 3.5 || Math.abs(bz) < 3.5 || (Math.hypot(bx + 8.5, bz - 5.5) < 5)) continue;
 
         const bw = 1.6 + Math.random() * 2.2;
         const bd = 1.6 + Math.random() * 2.2;
-        const bh = 2.5 + Math.random() * 8.5;
+        const bh = 2.5 + Math.random() * 8.0;
 
         const bGeo = new THREE.BoxGeometry(bw, bh, bd);
         const bMesh = new THREE.Mesh(bGeo, buildingMats.cyan);
         bMesh.position.set(bx, bh / 2, bz);
+        bMesh.castShadow = true;
+        bMesh.receiveShadow = true;
         buildingsGroup.add(bMesh);
 
-        // Building Neon Wireframe Edges
         const edges = new THREE.EdgesGeometry(bGeo);
         const line = new THREE.LineSegments(edges, buildingMats.edge);
         bMesh.add(line);
 
-        // Rooftop Beacon Light
-        if (bh > 6) {
+        if (bh > 5.5) {
           const beaconGeo = new THREE.SphereGeometry(0.12, 8, 8);
           const beaconMat = new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x10B981 : 0x06B6D4 });
           const beacon = new THREE.Mesh(beaconGeo, beaconMat);
@@ -1106,30 +1150,33 @@
         }
       }
 
-      // 5. City Moving Traffic (God's Eye Moving Cars)
+      // 5. City Autonomous Traffic (Moving Cars in Lanes)
       const carsGroup = new THREE.Group();
       scene.add(carsGroup);
-
-      const carCount = 14;
       const cars = [];
-      const carGeo = new THREE.BoxGeometry(0.35, 0.15, 0.75);
+      const carGeo = new THREE.BoxGeometry(0.4, 0.2, 0.85);
 
-      for (let i = 0; i < carCount; i++) {
+      for (let i = 0; i < 14; i++) {
         const isEastWest = i % 2 === 0;
-        const carMat = new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0xF59E0B : (i % 3 === 1 ? 0x06B6D4 : 0x10B981) });
+        const carMat = new THREE.MeshStandardMaterial({
+          color: i % 3 === 0 ? 0xF59E0B : (i % 3 === 1 ? 0x06B6D4 : 0x10B981),
+          metalness: 0.6,
+          roughness: 0.3
+        });
         const car = new THREE.Mesh(carGeo, carMat);
+        car.castShadow = true;
 
         car.userData = {
           isEW: isEastWest,
           fixedLane: (Math.floor(i / 2) - 3.5) * 4.5,
-          speed: (0.12 + Math.random() * 0.15) * (Math.random() > 0.5 ? 1 : -1)
+          speed: (0.12 + Math.random() * 0.14) * (Math.random() > 0.5 ? 1 : -1)
         };
 
         if (isEastWest) {
-          car.position.set((Math.random() - 0.5) * 40, 0.1, car.userData.fixedLane);
+          car.position.set((Math.random() - 0.5) * 40, 0.12, car.userData.fixedLane);
           car.rotation.y = car.userData.speed > 0 ? Math.PI / 2 : -Math.PI / 2;
         } else {
-          car.position.set(car.userData.fixedLane, 0.1, (Math.random() - 0.5) * 40);
+          car.position.set(car.userData.fixedLane, 0.12, (Math.random() - 0.5) * 40);
           car.rotation.y = car.userData.speed > 0 ? 0 : Math.PI;
         }
 
@@ -1137,12 +1184,11 @@
         cars.push(car);
       }
 
-      // 6. Central Neural Brain (عقل واصل - God's Eye Neural Core)
+      // 6. Central Neural Core (عقل واصل - God's Eye Brain)
       const brainGroup = new THREE.Group();
       brainGroup.position.set(0, 10, 0);
       scene.add(brainGroup);
 
-      // Core Hologram Sphere
       const brainCoreGeo = new THREE.IcosahedronGeometry(1.8, 2);
       const brainCoreMat = new THREE.MeshStandardMaterial({
         color: 0x06B6D4,
@@ -1153,13 +1199,11 @@
       const brainCore = new THREE.Mesh(brainCoreGeo, brainCoreMat);
       brainGroup.add(brainCore);
 
-      // Inner Solid Synaptic Core
       const innerCoreGeo = new THREE.SphereGeometry(1.0, 16, 16);
       const innerCoreMat = new THREE.MeshBasicMaterial({ color: 0x14B8A6 });
       const innerCore = new THREE.Mesh(innerCoreGeo, innerCoreMat);
       brainGroup.add(innerCore);
 
-      // Gyroscopic Coordinate Rings
       const ringMat = new THREE.MeshBasicMaterial({ color: 0x14B8A6, transparent: true, opacity: 0.65 });
       const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.7, 0.035, 12, 48), ringMat);
       const ring2 = new THREE.Mesh(new THREE.TorusGeometry(3.3, 0.035, 12, 48), ringMat);
@@ -1168,122 +1212,143 @@
       brainGroup.add(ring2);
       brainGroup.add(ring3);
 
-      // 7. Incident Location & Fire/Spark System (شارع المعاهدة بالسنبلاوين)
-      const incidentPos = new THREE.Vector3(-8.5, 0, 5.5);
+      // 7. Incident Location (حريق وعطل شارع المعاهدة بالسنبلاوين)
       const incidentGroup = new THREE.Group();
       incidentGroup.position.copy(incidentPos);
       scene.add(incidentGroup);
 
-      // Street Light Pole (Damaged)
       const poleGeo = new THREE.CylinderGeometry(0.08, 0.12, 3.2, 8);
       const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
       const poleMesh = new THREE.Mesh(poleGeo, poleMat);
       poleMesh.position.y = 1.6;
-      poleMesh.rotation.z = 0.15; // slightly bent from incident
+      poleMesh.rotation.z = 0.18;
+      poleMesh.castShadow = true;
       incidentGroup.add(poleMesh);
 
-      // Ground Danger Ripple Ring
-      const dangerDecalGeo = new THREE.RingGeometry(0.8, 2.4, 32);
+      const dangerDecalGeo = new THREE.RingGeometry(0.8, 2.5, 32);
       const dangerDecalMat = new THREE.MeshBasicMaterial({
         color: 0xEF4444,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.85
       });
       const dangerDecal = new THREE.Mesh(dangerDecalGeo, dangerDecalMat);
       dangerDecal.rotation.x = Math.PI / 2;
       dangerDecal.position.y = 0.08;
       incidentGroup.add(dangerDecal);
 
-      // Targeting Reticle (God's Eye Crosshairs)
       const reticleGeo = new THREE.RingGeometry(1.6, 1.75, 32);
       const reticleMat = new THREE.MeshBasicMaterial({ color: 0xEF4444, side: THREE.DoubleSide });
       const reticle = new THREE.Mesh(reticleGeo, reticleMat);
       reticle.position.set(0, 3.8, 0);
       incidentGroup.add(reticle);
 
-      // Fire & Electrical Sparks Particles
-      const sparkCount = 45;
+      // Multi-layer Fire & Smoke Particles
+      const sparkCount = 60;
       const sparkGeo = new THREE.BufferGeometry();
       const sparkPositions = new Float32Array(sparkCount * 3);
       const sparkVelocities = [];
 
       for (let i = 0; i < sparkCount; i++) {
-        sparkPositions[i * 3] = (Math.random() - 0.5) * 0.8;
-        sparkPositions[i * 3 + 1] = 1.5 + Math.random() * 2.0;
-        sparkPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
+        sparkPositions[i * 3] = (Math.random() - 0.5) * 0.9;
+        sparkPositions[i * 3 + 1] = 1.2 + Math.random() * 2.2;
+        sparkPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
         sparkVelocities.push({
-          vx: (Math.random() - 0.5) * 0.04,
-          vy: 0.03 + Math.random() * 0.05,
-          vz: (Math.random() - 0.5) * 0.04
+          vx: (Math.random() - 0.5) * 0.03,
+          vy: 0.035 + Math.random() * 0.05,
+          vz: (Math.random() - 0.5) * 0.03
         });
       }
       sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPositions, 3));
       const sparkMat = new THREE.PointsMaterial({
-        color: 0xF97316,
-        size: 0.25,
+        color: 0xFF5500,
+        size: 0.32,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.92,
         blending: THREE.AdditiveBlending
       });
       const sparkParticles = new THREE.Points(sparkGeo, sparkMat);
       incidentGroup.add(sparkParticles);
 
-      // Resolution 3D Holographic Checkmark
+      // Water Jet & Extinguishing Foam Stream (Sprays from Fire Truck to Fire)
+      const waterCount = 80;
+      const waterGeo = new THREE.BufferGeometry();
+      const waterPositions = new Float32Array(waterCount * 3);
+      for (let i = 0; i < waterCount; i++) {
+        waterPositions[i * 3] = 0;
+        waterPositions[i * 3 + 1] = -50; // hidden until activated
+        waterPositions[i * 3 + 2] = 0;
+      }
+      waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPositions, 3));
+      const waterMat = new THREE.PointsMaterial({
+        color: 0x38BDF8,
+        size: 0.28,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending
+      });
+      const waterParticles = new THREE.Points(waterGeo, waterMat);
+      scene.add(waterParticles);
+      let isWaterSpraying = false;
+
+      // Resolution 3D Checkmark & Citizen Rating
       const checkmarkGroup = new THREE.Group();
-      checkmarkGroup.position.set(0, 4.5, 0);
+      checkmarkGroup.position.set(0, 4.6, 0);
       checkmarkGroup.scale.set(0, 0, 0);
       incidentGroup.add(checkmarkGroup);
 
-      const checkGeo = new THREE.TorusGeometry(1.2, 0.1, 16, 32);
+      const checkGeo = new THREE.TorusGeometry(1.2, 0.12, 16, 32);
       const checkMat = new THREE.MeshBasicMaterial({ color: 0x10B981, transparent: true, opacity: 0.9 });
       const checkRing = new THREE.Mesh(checkGeo, checkMat);
       checkmarkGroup.add(checkRing);
 
-      // 8. Citizen WhatsApp Mobile Ping & Pulse Beam
+      // 8. Citizen WhatsApp Mobile Beam & Traveling Photon
       const whatsappBeamGeo = new THREE.CylinderGeometry(0.08, 0.08, 12, 8);
-      const whatsappBeamMat = new THREE.MeshBasicMaterial({
-        color: 0x10B981,
-        transparent: true,
-        opacity: 0
-      });
+      const whatsappBeamMat = new THREE.MeshBasicMaterial({ color: 0x10B981, transparent: true, opacity: 0 });
       const whatsappBeam = new THREE.Mesh(whatsappBeamGeo, whatsappBeamMat);
       whatsappBeam.position.set(incidentPos.x, 6, incidentPos.z);
       scene.add(whatsappBeam);
 
-      // Traveling WhatsApp Data Packet Photon
       const photonGeo = new THREE.SphereGeometry(0.35, 12, 12);
       const photonMat = new THREE.MeshBasicMaterial({ color: 0x10B981 });
       const dataPhoton = new THREE.Mesh(photonGeo, photonMat);
       dataPhoton.visible = false;
       scene.add(dataPhoton);
 
-      // 9. Municipal Maintenance Vehicle (سيارة الصيانة الميدانية)
-      const truckGroup = new THREE.Group();
+      // 9. Emergency Units (Fire Truck & Ambulance Groups)
       const hqPos = new THREE.Vector3(12, 0, -8);
+      const truckGroup = new THREE.Group();
       truckGroup.position.copy(hqPos);
       scene.add(truckGroup);
 
-      // Truck Body
+      // Fallback procedural Fire Truck (used until GLTF loads)
       const truckBody = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 0.6, 1.8),
-        new THREE.MeshStandardMaterial({ color: 0x0284C7, metalness: 0.5, roughness: 0.2 })
+        new THREE.BoxGeometry(1.1, 0.8, 2.4),
+        new THREE.MeshStandardMaterial({ color: 0xDC2626, metalness: 0.6, roughness: 0.2 })
       );
-      truckBody.position.y = 0.35;
+      truckBody.position.y = 0.45;
+      truckBody.castShadow = true;
       truckGroup.add(truckBody);
 
-      // Siren Beacon
-      const sirenGeo = new THREE.SphereGeometry(0.12, 8, 8);
-      const sirenMat = new THREE.MeshBasicMaterial({ color: 0x38BDF8 });
-      const siren = new THREE.Mesh(sirenGeo, sirenMat);
-      siren.position.set(0, 0.72, 0.2);
-      truckGroup.add(siren);
+      // Fallback procedural Ambulance
+      const ambGroup = new THREE.Group();
+      const ambHqPos = new THREE.Vector3(14, 0, -5.5);
+      ambGroup.position.copy(ambHqPos);
+      scene.add(ambGroup);
 
-      // Holographic Navigation Route Trail (Dispatch Line)
+      const ambBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.7, 1.9),
+        new THREE.MeshStandardMaterial({ color: 0xF8FAFC, metalness: 0.5, roughness: 0.2 })
+      );
+      ambBody.position.y = 0.4;
+      ambBody.castShadow = true;
+      ambGroup.add(ambBody);
+
+      // Holographic Dispatch Route Trail
       const routePoints = [
         hqPos.clone(),
         new THREE.Vector3(12, 0.05, 5.5),
-        new THREE.Vector3(-6, 0.05, 5.5)
+        new THREE.Vector3(-5.2, 0.05, 5.5)
       ];
       const routeCurve = new THREE.CatmullRomCurve3(routePoints, false, 'catmullrom', 0.1);
       const routeGeo = new THREE.BufferGeometry().setFromPoints(routeCurve.getPoints(40));
@@ -1298,66 +1363,163 @@
       routeLine.computeLineDistances();
       scene.add(routeLine);
 
-      // 10. Scenario Narrative Data
+      // 10. REALISTIC GLTF 3D MODELS LOADER
+      let loadedModelCount = 0;
+      const totalModelsToLoad = 4;
+      let realFireTruckModel = null;
+      let realAmbulanceModel = null;
+      let realFireModel = null;
+      let realStreetModel = null;
+
+      function updateModelBadge() {
+        if (!modelLoaderText || !modelLoaderDot) return;
+        if (loadedModelCount >= totalModelsToLoad) {
+          modelLoaderDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+          modelLoaderText.textContent = '⚡ كافة الموديلات الواقعية مفعلة بنجاح (المطافي، الإسعاف، الشارع، الحريق)';
+        } else {
+          modelLoaderText.textContent = 'جاري تفعيل الموديلات الواقعية (' + loadedModelCount + '/' + totalModelsToLoad + ')...';
+        }
+      }
+
+      function loadGLTFModel(url, targetSize, position, rotationY, onReady) {
+        if (typeof THREE.GLTFLoader === 'undefined') {
+          console.warn('GLTFLoader not loaded from CDN');
+          return;
+        }
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          url,
+          (gltf) => {
+            const root = gltf.scene;
+            root.traverse((node) => {
+              if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+                if (node.material) {
+                  node.material.roughness = Math.min(node.material.roughness ?? 0.5, 0.7);
+                }
+              }
+            });
+
+            // Normalize size and center pivot
+            const box = new THREE.Box3().setFromObject(root);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0 && targetSize) {
+              const scale = targetSize / maxDim;
+              root.scale.set(scale, scale, scale);
+            }
+
+            const updatedBox = new THREE.Box3().setFromObject(root);
+            const center = new THREE.Vector3();
+            updatedBox.getCenter(center);
+
+            const pivot = new THREE.Group();
+            root.position.x = -center.x;
+            root.position.z = -center.z;
+            root.position.y = -updatedBox.min.y;
+            pivot.add(root);
+
+            if (rotationY !== undefined) pivot.rotation.y = rotationY;
+            if (position) pivot.position.copy(position);
+
+            loadedModelCount++;
+            updateModelBadge();
+            if (onReady) onReady(pivot, root);
+          },
+          undefined,
+          (err) => console.warn('Failed loading ' + url, err)
+        );
+      }
+
+      // Load 1: Real City Street Block
+      loadGLTFModel('/models/street/scene.gltf', 48, new THREE.Vector3(0, 0, 0), 0, (pivot) => {
+        realStreetModel = pivot;
+        scene.add(realStreetModel);
+        realStreetModel.position.y = -0.05;
+      });
+
+      // Load 2: Real Municipal Fire Truck (مطافي)
+      loadGLTFModel('/models/fire-truck/source/glb.glb', 4.4, null, Math.PI / 2, (pivot) => {
+        realFireTruckModel = pivot;
+        truckGroup.remove(truckBody); // remove procedural fallback
+        truckGroup.add(realFireTruckModel);
+      });
+
+      // Load 3: Real Ambulance (إسعاف)
+      loadGLTFModel('/models/ambulance/scene.gltf', 3.2, null, Math.PI / 2, (pivot) => {
+        realAmbulanceModel = pivot;
+        ambGroup.remove(ambBody); // remove procedural fallback
+        ambGroup.add(realAmbulanceModel);
+      });
+
+      // Load 4: Real Fire & Smoke (نار ودخان)
+      loadGLTFModel('/models/fire-smoke/scene.gltf', 3.6, new THREE.Vector3(0, 0, 0), 0, (pivot) => {
+        realFireModel = pivot;
+        incidentGroup.add(realFireModel);
+      });
+
+      // 11. Scenario Narrative Data
       const scenarios = [
         {
-          badge: '🚨 المرحلة 1: رصد العطل بالشارع',
+          badge: '🚨 السيناريو 1: رصد حريق الشارع',
           badgeClass: 'bg-red-500/20 text-red-300 border border-red-500/30 animate-pulse',
           indicator: 'PHASE 1 / 5',
-          title: 'عطل مفاجئ وحريق أسلاك إنارة في الشارع',
-          desc: 'رصد خلل كهربائي في عمود الإنارة بشارع المعاهدة وتوقف حركة المارة مع تصاعد ألسنة اللهب والدخان.',
-          stat1: 'كود البلاغ: قيد الإرسال...',
-          stat2: 'فرقة التدخل: بانتظار البلاغ',
+          title: 'اشتعال حريق وعطل في كشك كهرباء بالشارع',
+          desc: 'رصد كاميرات ومستشعرات الشارع اندلاع حريق وألسنة لهب في شارع المعاهدة بالسنبلاوين مع تعطل التيار الكهربائي في المربع السكني.',
+          stat1: 'نوع البلاغ: طوارئ حرائق وكهرباء',
+          stat2: 'مستوى الخطر: حرج للغاية',
           telemetry: 'ALERT // INCIDENT LOCATED: LAT 30.9571° N, LNG 31.5218° E',
-          camPos: { x: -6, y: 10, z: 16 },
+          camPos: { x: -6, y: 8, z: 15 },
           lookAt: incidentPos
         },
         {
-          badge: '📲 المرحلة 2: إرسال بلاغ الواتساب',
+          badge: '📲 السيناريو 2: انطلاق بلاغ الواتساب',
           badgeClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
           indicator: 'PHASE 2 / 5',
-          title: 'مواطن يرسل البلاغ في ثوانٍ عبر الواتساب',
-          desc: 'بدون تطبيقات، المواطن يفتح الواتساب ويرسل صورة العطل ولوكيشن GPS بالضبط. انطلاق نبضة البيانات المشفرة إلى الفضاء.',
+          title: 'المواطن يرسل بلاغاً فورياً عبر الواتساب',
+          desc: 'قام المواطن بتصوير الحريق وإرسال الموقع الجغرافي GPS مباشرة عبر شات واصل بدون أي تطبيقات. تم تحويل البلاغ لشحنة بيانات رقمية صاعدة.',
           stat1: 'القناة: WhatsApp Cloud API',
           stat2: 'زمن الإرسال: < 15 ثانية',
           telemetry: 'WHATSAPP PACKET DISPATCHED // ENCRYPTED AES-256',
-          camPos: { x: -8, y: 14, z: 18 },
+          camPos: { x: -8, y: 12, z: 18 },
           lookAt: new THREE.Vector3(-4, 5, 3)
         },
         {
-          badge: '🧠 المرحلة 3: عقل واصل المركزي يدير',
+          badge: '🧠 السيناريو 3: عقل واصل يحلل ويدير',
           badgeClass: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
           indicator: 'PHASE 3 / 5',
-          title: 'عقل واصل يستلم البلاغ ويصدر كود المتابعة',
-          desc: 'نظام الذكاء الاصطناعي المركزي يطابق الموقع الجغرافي PostGIS، يمنع التكرار، ويصدر كود SBL-K7HN3R ويخطر غرفة العمليات.',
+          title: 'عقل واصل المركزي يستلم البلاغ ويحدد المسار',
+          desc: 'النظام يحلل البلاغ لحظياً بالذكاء الاصطناعي، يربطه بقواعد PostGIS الجغرافية، ويولد كود التتبع SBL-K7HN3R مع تكليف فرق الإطفاء والإسعاف.',
           stat1: 'كود البلاغ: SBL-K7HN3R',
-          stat2: 'المعالجة: 80ms في الباك إند',
+          stat2: 'سرعة التحليل: 80ms مع منع التكرار',
           telemetry: 'AI NEURAL ROUTING // POSTGIS DEDUPLICATION OK',
           camPos: { x: 0, y: 16, z: 14 },
           lookAt: new THREE.Vector3(0, 10, 0)
         },
         {
-          badge: '🚒 المرحلة 4: تحرك سيارة الصيانة الميدانية',
+          badge: '🚒 السيناريو 4: انطلاق المطافي والإسعاف',
           badgeClass: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
           indicator: 'PHASE 4 / 5',
-          title: 'تكليف فني الكهرباء وتحرك السيارة للموقع',
-          desc: 'ظهور مسار الملاحة الميداني على خريطة مجلس المدينة، وتحرك طاقم الصيانة فورياً إلى شارع المعاهدة لإصلاح العطل.',
-          stat1: 'الفريق: م. أحمد فؤاد (كهرباء)',
-          stat2: 'الحالة: جاري التحرك الميداني 🔵',
-          telemetry: 'UNIT DISPATCHED // ETA: 12 MINS // TRACKING GPS',
-          camPos: { x: 4, y: 14, z: 18 },
-          lookAt: new THREE.Vector3(2, 2, 0)
+          title: 'تحرك سيارة المطافي والإسعاف بالسارينة لموقع الحادث',
+          desc: 'انطلقت شاحنة الإطفاء وسيارة الإسعاف الحقيقيتين بأضواء الطوارئ الحمراء والزرقاء الوامضة عبر أقصر مسار هولوغرافي لموقع البلاغ لبدء الإخماد.',
+          stat1: 'المركبات: سيارة مطافي + إسعاف طوارئ',
+          stat2: 'الأضواء: سارينة دوارة حمراء وزرقاء 🚨',
+          telemetry: 'UNITS EN ROUTE // DISPATCHED TO INCIDENT // ETA: 4 MINS',
+          camPos: { x: 2, y: 11, z: 16 },
+          lookAt: new THREE.Vector3(-3, 2, 5)
         },
         {
-          badge: '🟢 المرحلة 5: إتمام الحل وتوثيق الرضا',
+          badge: '🟢 السيناريو 5: إخماد الحريق والحل المعتمد',
           badgeClass: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
           indicator: 'PHASE 5 / 5',
-          title: 'تم إصلاح العطل وإشعار المواطن بنجاح',
-          desc: 'إخماد الخطر وتوثيق صورة بعد الإصلاح، وإرسال إشعار فوري على واتساب المواطن مع تقييم 5 نجوم للخدمة.',
-          stat1: 'كود البلاغ: SBL-K7HN3R (محلول ✔)',
+          title: 'إخماد الحريق بالكامل بالماء وتأكيد الحل مع المواطن',
+          desc: 'وصلت فرقة المطافي ورشت خراطيم المياه لإطفاء النيران، وتم إغلاق البلاغ بنجاح وإرسال إشعار للمواطن على الواتساب لتقييم الخدمة.',
+          stat1: 'الحالة: تم الإخماد بنجاح 🟢',
           stat2: 'تقييم المواطن: ⭐⭐⭐⭐⭐',
-          telemetry: 'STATUS: RESOLVED & VERIFIED // SLA ACHIEVED',
-          camPos: { x: -6, y: 8, z: 14 },
+          telemetry: 'STATUS: RESOLVED & VERIFIED // SLA ACHIEVED 100%',
+          camPos: { x: -6, y: 7, z: 13 },
           lookAt: incidentPos
         }
       ];
@@ -1373,7 +1535,6 @@
         hudStat2.textContent = sc.stat2;
         telemetryStatus.textContent = sc.telemetry;
 
-        // Update step buttons active class
         for (let i = 0; i < 5; i++) {
           const btn = document.getElementById('stepBtn' + i);
           if (btn) {
@@ -1393,7 +1554,6 @@
 
         const sc = scenarios[stepIdx];
 
-        // Animate Camera to cinematic perspective
         gsap.to(camera.position, {
           x: sc.camPos.x,
           y: sc.camPos.y,
@@ -1404,62 +1564,79 @@
         });
 
         if (stepIdx === 0) {
-          // Fire Alert
-          sparkMat.color.setHex(0xF97316);
-          sparkMat.opacity = 0.9;
-          incidentLight.color.setHex(0xEF4444);
+          // Fire alert active
+          isWaterSpraying = false;
+          waterMat.opacity = 0;
+          sparkMat.color.setHex(0xFF5500);
+          sparkMat.opacity = 0.95;
+          if (realFireModel) realFireModel.scale.set(1, 1, 1);
+          fireLight.color.setHex(0xFF5500);
           dangerDecal.material.color.setHex(0xEF4444);
-          reticle.material.color.setHex(0xEF4444);
           reticle.visible = true;
           checkmarkGroup.scale.set(0, 0, 0);
 
-          whatsappBeamMat.opacity = 0;
-          dataPhoton.visible = false;
-          routeMat.opacity = 0;
-          gsap.to(truckGroup.position, { x: hqPos.x, z: hqPos.z, duration: 1 });
+          // Return vehicles to base
+          gsap.to(truckGroup.position, { x: hqPos.x, z: hqPos.z, duration: 1.2, ease: 'power2.out' });
+          gsap.to(ambGroup.position, { x: ambHqPos.x, z: ambHqPos.z, duration: 1.2, ease: 'power2.out' });
         } else if (stepIdx === 1) {
-          // WhatsApp Pulse
+          // WhatsApp pulse
+          isWaterSpraying = false;
           whatsappBeamMat.opacity = 0.85;
           dataPhoton.visible = true;
           dataPhoton.position.copy(incidentPos);
 
-          // Fly data photon from incident up into Brain
-          gsap.fromTo(dataPhoton.position, 
+          gsap.fromTo(dataPhoton.position,
             { x: incidentPos.x, y: 1.5, z: incidentPos.z },
             { x: 0, y: 10, z: 0, duration: 1.8, ease: 'power2.out', repeat: -1, repeatDelay: 0.5 }
           );
         } else if (stepIdx === 2) {
-          // Wassel Neural Core shockwave
+          // Wassel AI core analysis
+          isWaterSpraying = false;
           whatsappBeamMat.opacity = 0.2;
           dataPhoton.visible = false;
 
-          // Pulse Brain
           gsap.fromTo(brainCore.scale, { x: 1, y: 1, z: 1 }, { x: 1.5, y: 1.5, z: 1.5, duration: 0.4, yoyo: true, repeat: 3 });
           gsap.to(brainLight, { intensity: 8.0, duration: 0.3, yoyo: true, repeat: 3 });
         } else if (stepIdx === 3) {
-          // Maintenance Vehicle Dispatch
+          // Dispatch Fire Truck & Ambulance
+          isWaterSpraying = false;
           routeMat.opacity = 0.85;
 
-          // Drive truck along route to incident
+          // Drive Fire Truck to incident front
           gsap.to(truckGroup.position, {
-            x: -6,
+            x: -5.2,
             z: 5.5,
             duration: 2.2,
             ease: 'power1.inOut',
-            onStart: () => {
-              truckGroup.rotation.y = Math.PI;
-            }
+            onStart: () => { truckGroup.rotation.y = Math.PI; }
+          });
+
+          // Drive Ambulance to perimeter
+          gsap.to(ambGroup.position, {
+            x: -7.5,
+            z: 9.2,
+            duration: 2.4,
+            ease: 'power1.inOut',
+            onStart: () => { ambGroup.rotation.y = Math.PI * 0.7; }
           });
         } else if (stepIdx === 4) {
-          // Problem Solved!
+          // Extinguish Fire & Resolve!
           routeMat.opacity = 0.2;
-          sparkMat.opacity = 0.1; // fire extinguished
-          incidentLight.color.setHex(0x10B981);
+          isWaterSpraying = true;
+          waterMat.opacity = 0.85;
+
+          // Shrink fire flame
+          if (realFireModel) {
+            gsap.to(realFireModel.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 1.5, ease: 'power2.in' });
+          }
+          gsap.to(sparkMat, { opacity: 0.1, duration: 1.5 });
+          gsap.to(fireLight, { intensity: 0, duration: 1.5 });
+
           dangerDecal.material.color.setHex(0x10B981);
           reticle.visible = false;
 
-          // Pop checkmark
-          gsap.to(checkmarkGroup.scale, { x: 1, y: 1, z: 1, duration: 0.8, ease: 'back.out(2)' });
+          // Pop resolution checkmark
+          gsap.to(checkmarkGroup.scale, { x: 1, y: 1, z: 1, duration: 0.8, delay: 0.8, ease: 'back.out(2)' });
         }
       };
 
@@ -1471,7 +1648,7 @@
           startAutoLoop();
         } else {
           playIcon.textContent = '▶';
-          playLabel.textContent = 'تشغيل السيناريو';
+          playLabel.textContent = 'تشغيل السيناريو الكامل';
           clearInterval(autoPlayInterval);
         }
       };
@@ -1482,7 +1659,7 @@
           if (!isAutoPlaying) return;
           currentStep = (currentStep + 1) % 5;
           setScenarioStep(currentStep);
-        }, 5000);
+        }, 5500);
       }
 
       window.reset3DCamera = function() {
@@ -1491,7 +1668,7 @@
         }
       };
 
-      // 11. Mouse / Touch Orbit Controls
+      // 12. Mouse / Touch Orbit Controls
       let mouseX = 0;
       let mouseY = 0;
       let targetRotX = 0;
@@ -1524,7 +1701,6 @@
         prevMousePos = { x: e.clientX, y: e.clientY };
       });
 
-      // Touch controls
       container.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
           isDragging = true;
@@ -1543,19 +1719,18 @@
 
       window.addEventListener('touchend', () => { isDragging = false; });
 
-      // 12. Main 60 FPS Render Loop
+      // 13. High-Precision Render Loop
       const clock = new THREE.Clock();
 
       function animate() {
         requestAnimationFrame(animate);
-        const delta = clock.getDelta();
         const time = clock.getElapsedTime();
 
         // Smooth camera tilt
         scene.rotation.y += (targetRotY - scene.rotation.y) * 0.04;
         scene.rotation.x += (targetRotX - scene.rotation.x) * 0.04;
 
-        // Sonar expanding wave animation
+        // Sonar expanding radar ring
         const sonarScale = 1 + (time * 1.5) % 15;
         sonarMesh.scale.set(sonarScale, sonarScale, 1);
         sonarMat.opacity = Math.max(0, 0.7 - (sonarScale / 16));
@@ -1571,6 +1746,11 @@
         // Incident Reticle Rotation
         reticle.rotation.z += 0.025;
 
+        // Realistic Fire Light Organic Flicker
+        if (currentStep < 4) {
+          fireLight.intensity = 3.5 + Math.sin(time * 25) * 1.2 + Math.cos(time * 38) * 0.8;
+        }
+
         // Fire / Sparks Simulation
         const posAttr = sparkGeo.attributes.position;
         for (let i = 0; i < sparkCount; i++) {
@@ -1579,7 +1759,7 @@
           let z = posAttr.getZ(i) + sparkVelocities[i].vz;
 
           if (y > 4.2 || Math.abs(x) > 1.2 || Math.abs(z) > 1.2) {
-            y = 1.6;
+            y = 1.2;
             x = (Math.random() - 0.5) * 0.4;
             z = (Math.random() - 0.5) * 0.4;
           }
@@ -1587,12 +1767,51 @@
         }
         sparkGeo.attributes.position.needsUpdate = true;
 
-        // Siren Flasher on Maintenance Truck
-        if (currentStep === 3) {
-          siren.visible = Math.floor(time * 8) % 2 === 0;
+        // Dynamic Emergency Siren Flashing (Red / Blue Dual Strobes)
+        if (currentStep === 3 || currentStep === 4) {
+          // Truck siren lights position updates
+          truckSirenRed.position.set(truckGroup.position.x - 0.3, 1.4, truckGroup.position.z);
+          truckSirenBlue.position.set(truckGroup.position.x + 0.3, 1.4, truckGroup.position.z);
+
+          const strobe = Math.sin(time * 18);
+          truckSirenRed.intensity = strobe > 0 ? 5.5 : 0;
+          truckSirenBlue.intensity = strobe <= 0 ? 5.5 : 0;
+
+          // Ambulance siren lights position updates
+          ambSirenRed.position.set(ambGroup.position.x - 0.2, 1.2, ambGroup.position.z);
+          ambSirenBlue.position.set(ambGroup.position.x + 0.2, 1.2, ambGroup.position.z);
+
+          const ambStrobe = Math.cos(time * 20);
+          ambSirenRed.intensity = ambStrobe > 0 ? 4.0 : 0;
+          ambSirenBlue.intensity = ambStrobe <= 0 ? 4.0 : 0;
+        } else {
+          truckSirenRed.intensity = 0;
+          truckSirenBlue.intensity = 0;
+          ambSirenRed.intensity = 0;
+          ambSirenBlue.intensity = 0;
         }
 
-        // Animate Moving Cars
+        // Water Jet Particle Stream Simulation (Fire Truck Nozzle to Incident)
+        if (isWaterSpraying) {
+          const wPosAttr = waterGeo.attributes.position;
+          const startX = truckGroup.position.x;
+          const startY = 1.0;
+          const startZ = truckGroup.position.z;
+          const targetX = incidentPos.x;
+          const targetY = 1.2;
+          const targetZ = incidentPos.z;
+
+          for (let i = 0; i < waterCount; i++) {
+            const progress = ((time * 3.5 + i / waterCount) % 1);
+            const wx = startX + (targetX - startX) * progress + (Math.random() - 0.5) * 0.2;
+            const wy = startY + (targetY - startY) * progress + Math.sin(progress * Math.PI) * 0.8;
+            const wz = startZ + (targetZ - startZ) * progress + (Math.random() - 0.5) * 0.2;
+            wPosAttr.setXYZ(i, wx, wy, wz);
+          }
+          waterGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Moving Autonomous Cars
         cars.forEach(car => {
           if (car.userData.isEW) {
             car.position.x += car.userData.speed;
