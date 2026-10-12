@@ -97,6 +97,8 @@ enum ChannelStatus {
 enum UserRole {
   TENANT_ADMIN
   AGENT
+  DEPT_DISPATCHER
+  FIELD_AGENT
 }
 
 // // CHANGED: Item 10 - Reconciled ReportStatus Enum with Part 1 & 2 UX Table
@@ -208,6 +210,7 @@ model Tenant {
   updatedAt         DateTime     @updatedAt @db.Timestamptz(3)
 
   channels      TenantChannel[]
+  departments   Department[]
   users         User[]
   userSessions  UserSession[]
   categories    Category[]
@@ -246,9 +249,32 @@ model TenantChannel {
 // Identity: tenant staff and platform operators
 // ----------------------------------------------------------------------------
 
+
+model Department {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String   // e.g. "وحدة الدفاع المدني والمطافي", "هندسة الكهرباء"
+  code        String   // "FIRE", "AMBULANCE", "ELECTRICITY", "WATER", "SANITATION", "RURAL"
+  phone       String?
+  isActive    Boolean  @default(true)
+  slaMinutes  Int      @default(120)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  users       User[]
+  reports     Report[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+}
+
 model User {
   id                 String    @id @default(uuid()) @db.Uuid
   tenantId           String    @db.Uuid
+  departmentId       String?   @db.Uuid
+  phoneNumber        String?   // Mobile field dispatch contact
   email              String    @unique // lowercased; globally unique so login needs no tenant
   passwordHash       String // argon2id
   displayName        String
@@ -262,6 +288,7 @@ model User {
   updatedAt          DateTime  @updatedAt @db.Timestamptz(3)
 
   tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  department      Department?   @relation(fields: [tenantId, departmentId], references: [tenantId, id], onDelete: SetNull)
   sessions        UserSession[]
   assignedReports Report[]
   reportEvents    ReportEvent[]
@@ -450,6 +477,7 @@ model Report {
   draftId        String       @db.Uuid
   contactId      String       @db.Uuid
   categoryId     String       @db.Uuid
+  departmentId   String?      @db.Uuid // Assigned operational unit (Fire, Elec, etc.)
   description    String       @db.VarChar(1000)
   addressText    String?      @db.VarChar(255) // street / landmark text input fallback
   latitude       Decimal?     @db.Decimal(8, 5) // citizen-supplied, not verified
@@ -468,6 +496,7 @@ model Report {
   draft      ReportDraft   @relation(fields: [tenantId, draftId], references: [tenantId, id], onDelete: Restrict)
   contact    Contact       @relation(fields: [tenantId, contactId], references: [tenantId, id], onDelete: Restrict)
   category   Category      @relation(fields: [tenantId, categoryId], references: [tenantId, id], onDelete: Restrict)
+  department Department?   @relation(fields: [tenantId, departmentId], references: [tenantId, id], onDelete: SetNull)
   assignedTo User?         @relation(fields: [tenantId, assignedToId], references: [tenantId, id], onDelete: Restrict)
   events     ReportEvent[]
 
@@ -476,6 +505,7 @@ model Report {
   @@unique([tenantId, draftId]) // one report per draft: idempotent submit
   @@index([tenantId, status, createdAt])
   @@index([tenantId, createdAt])
+  @@index([tenantId, departmentId, status])
   @@index([tenantId, assignedToId])
   @@index([tenantId, contactId])
 }

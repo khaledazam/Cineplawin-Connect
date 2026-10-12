@@ -2,40 +2,57 @@
 
 ## 6.1 Overview and Architecture
 
-The Wassel Dashboard (منصة واصل لإدارة البلاغات) is a staff-facing web application built with **Next.js (App Router)** and **Tailwind CSS**. It serves two primary user roles within a tenant:
-1. **Tenant Admin** (e.g., Dr. Hassan): Views headline KPIs, manages categories and user accounts, configures working hours and settings, and oversees team performance.
-2. **Agent / Staff** (e.g., Mohamed): Triage incoming reports, assigns them to staff, inspects photos, adds internal notes or public citizen replies, updates report statuses, and initiates handoff resolution.
+The Wassel Dashboard (منصة واصل لإدارة البلاغات) is a staff-facing web application built with **Next.js 14 (App Router)** and **Tailwind CSS**. It serves a comprehensive multi-level municipal hierarchy:
+
+### Organizational Roles & Access Control
+1. **Super Admin / Governorate (ديوان المحافظة)**: Cross-city visibility across all centers (Sunbullawein, Mansoura, Mit Ghamr...).
+2. **Tenant Admin / City Leadership (رئاسة مجلس المدينة)**: Complete overview of all municipal sectors, SLA performance comparison, citizen satisfaction ratings, and cross-department escalations.
+3. **Department Dispatcher / Unit Operator (مشرف غرفة عمليات الوحدة التنفيذية)**: Dedicated, distraction-free dashboard showing ONLY reports belonging to their sector (Fire, Ambulance, Electricity, Water/Sewage, Sanitation, Rural Village Units).
+4. **Field Agent / Technician (الفني / السائق الميداني)**: Mobile WhatsApp Field Dispatch interface receiving GPS coordinates, incident photos, and dispatching resolution updates directly from the street.
 
 ### Core UX Principles
-- **RTL-First (Right-to-Left)**: Native Arabic UI layout (`dir="rtl"`) with the Cairo font for clean Egyptian typography.
+- **RTL-First (Right-to-Left)**: Native Arabic UI layout (`dir="rtl"`) with Alexandria and Cairo typography.
 - **High-Density, Fast-Scan Interface**: Designed for quick keyboard/mouse triage without unnecessary multi-layer modals or deeply nested navigation.
-- **Zero-Map v1 Scope**: Complex GIS and dynamic Mapbox/Leaflet views are deferred to v1.1. In v1, reports display explicit latitude/longitude badges with an instant external link to Google Maps (`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`).
-- **Strict Role-Based Views**: Agents have read-write access to reports and events, but cannot modify tenant settings or user roles.
+- **Specialized Department Views**: Department operators only see what concerns their duty; Fire does not see pothole reports, Sanitation does not see power outages.
+- **Audible Emergency Alerts**: High-urgency incidents (fires, gas leaks, severe electrocution risks) trigger real-time audible chimes and visual pulsing alerts on the relevant department dashboard.
+- **Instant Google Maps Routing**: Each report features instant coordinate links (`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`) and routing waypoints.
 
 ---
 
-## 6.2 Information Architecture & Navigation
+## 6.2 Information Architecture & Multi-Department Navigation
 
 ```mermaid
 graph TD
-    A[Staff Login /auth/login] --> B{Authenticated Role}
-    B -->|AGENT / TENANT_ADMIN| C[Reports Inbox /reports]
-    C --> D[Report Detail Drawer /reports/:id]
-    B -->|TENANT_ADMIN Only| E[Settings /settings]
-    E --> F[Categories Tab]
-    E --> G[Team Members Tab]
-    E --> H[Working Hours & Channel Tab]
-    C --> I[3 Headline KPI Cards Top Bar]
+    A[Staff Login /auth/login] --> B{Authenticated Role & Unit}
+    B -->|TENANT_ADMIN| C[Executive Command Center /reports]
+    B -->|DEPT_DISPATCHER: FIRE| D[🚒 Fire & Rescue Dashboard /dept/fire]
+    B -->|DEPT_DISPATCHER: ELEC| E[⚡ Electricity Utility /dept/electricity]
+    B -->|DEPT_DISPATCHER: WATER| F[💧 Water & Sewage /dept/water]
+    B -->|DEPT_DISPATCHER: CLEAN| G[🧹 Sanitation & Environment /dept/sanitation]
+    B -->|DEPT_DISPATCHER: RURAL| H[🌾 Rural Village Units /dept/rural/:code]
+    B -->|FIELD_AGENT| I[📲 WhatsApp Field Mobile Gateway]
+    
+    C --> J[Report Detail Drawer /reports/:id]
+    D --> J
+    E --> J
+    F --> J
+    G --> J
+    H --> J
 ```
 
 ### Route Structure
 
 | Route | Allowed Roles | Description |
 |---|---|---|
-| `/auth/login` | Public | Email and password login with tenant-agnostic email resolution and generic error responses. |
-| `/reports` | `AGENT`, `TENANT_ADMIN` | The primary operational view: 3 headline KPI cards, filter toolbar, and dense paginated report table. |
-| `/reports/[id]` | `AGENT`, `TENANT_ADMIN` | Full-detail sheet/drawer containing citizen info, photo viewer, status update form, and chronological audit trail. |
-| `/settings` | `TENANT_ADMIN` | Tenant administration (Categories, Team members, Working hours, Directory). |
+| `/auth/login` | Public | Email / Mobile OTP login with automatic tenant and department resolution. |
+| `/reports` | `TENANT_ADMIN`, `SUPER_ADMIN` | Executive cross-sector inbox: Headline KPIs, comparative SLA charts, comprehensive filter toolbar. |
+| `/dept/fire` | `DEPT_DISPATCHER (FIRE)`, `TENANT_ADMIN` | Dedicated Fire & Civil Defense Dashboard: Audible alarms, nearby hydrant maps, fire engine dispatch buttons. |
+| `/dept/electricity` | `DEPT_DISPATCHER (ELEC)`, `TENANT_ADMIN` | Electricity Utility Dashboard: Damaged street poles, transformers, live electrocution hazard tracker. |
+| `/dept/water` | `DEPT_DISPATCHER (WATER)`, `TENANT_ADMIN` | Water & Sewage Dashboard: Pipe ruptures, suction truck fleet management, water cut tracker. |
+| `/dept/sanitation` | `DEPT_DISPATCHER (CLEAN)`, `TENANT_ADMIN` | Sanitation & Environmental Cleanliness: Waste accumulation clusters, heavy machinery tractor routing. |
+| `/dept/rural/[code]` | `DEPT_DISPATCHER (RURAL)`, `TENANT_ADMIN` | Rural Local Village Unit Dashboard: Geofenced strictly to village boundaries (Barhamtoush, El-Hagayzah, Tanboul...). |
+| `/reports/[id]` | All Staff Roles (Scoped by Dept) | Full report drawer: Citizen photo viewer, status progression form, assignment selector, audit trail. |
+| `/settings` | `TENANT_ADMIN`, `SUPER_ADMIN` | Municipal tenant administration: Departments, Categories, Team members, Working hours, Directory. |
 
 ---
 
