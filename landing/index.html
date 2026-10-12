@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منظومة واصل (Wassel) — صوتك واصل.. وبلاغك محلول</title>
+  <meta name="description" content="المنظومة الرقمية الموحدة لتلقي ومتابعة بلاغات المواطنين والخدمات في المدن المصرية في 60 ثانية عبر تطبيق واتساب دون تحميل أي تطبيقات.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800;900&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              teal: '#083344',      // Deep Nile Teal
+              dark: '#031E28',      // Rich Dark Background
+              emerald: '#0D9488',   // Vibrant Solution Emerald
+              accent: '#14B8A6',    // Bright Cyan-Teal
+              light: '#F0FDFA',     // Soft Mint Tint
+              surface: '#0B3B4E'    // Elevated Card Surface
+            }
+          },
+          fontFamily: {
+            heading: ['Alexandria', 'sans-serif'],
+            body: ['Cairo', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #031E28;
+      color: #F8FAFC;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Alexandria', sans-serif;
+    }
+    .glass-card {
+      background: rgba(8, 51, 68, 0.55);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(20, 184, 166, 0.2);
+    }
+    .glass-card:hover {
+      border-color: rgba(20, 184, 166, 0.45);
+    }
+    .glow-teal {
+      box-shadow: 0 0 50px -10px rgba(13, 148, 136, 0.3);
+    }
+    .chat-bubble-in {
+      background-color: #0B3B4E;
+      border: 1px solid rgba(20, 184, 166, 0.25);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-out {
+      background: linear-gradient(135deg, #0D9488, #0F766E);
+      border-radius: 18px 18px 18px 4px;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #031E28;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #083344;
+      border-radius: 4px;
+      border: 1px solid #14B8A6;
+    }
+  </style>
+</head>
+<body class="selection:bg-brand-emerald selection:text-white relative overflow-x-hidden">
+
+  <!-- Ambient Glow Backgrounds -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-brand-emerald/10 blur-[130px] rounded-full pointer-events-none z-0"></div>
+  <div class="fixed bottom-0 right-0 w-[500px] h-[500px] bg-brand-accent/5 blur-[150px] rounded-full pointer-events-none z-0"></div>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="sticky top-0 z-50 w-full px-6 py-4 border-b border-teal-900/50 bg-brand-dark/85 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-emerald to-brand-accent flex items-center justify-center shadow-lg shadow-teal-900/50 group-hover:scale-105 transition">
+          <span class="text-white font-heading font-black text-xl">و</span>
+        </div>
+        <div>
+          <span class="text-xl font-heading font-extrabold text-white tracking-wide block leading-none">واصل</span>
+          <span class="text-[11px] font-medium text-brand-accent">صوتك واصل.. وبلاغك محلول</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-teal-100/80">
+        <a href="#about" class="hover:text-brand-accent transition">عن المنظومة</a>
+        <a href="#how-it-works" class="hover:text-brand-accent transition">رحلة البلاغ</a>
+        <a href="#simulator" class="hover:text-brand-accent transition flex items-center gap-1.5 text-brand-accent font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          المحاكي الحي
+        </a>
+        <a href="#dashboard" class="hover:text-brand-accent transition">لوحة القيادة</a>
+        <a href="#architecture" class="hover:text-brand-accent transition">المعمارية والتنفيذ</a>
+        <a href="#security" class="hover:text-brand-accent transition">الأمان وقانون 151</a>
+        <a href="#faq" class="hover:text-brand-accent transition">الأسئلة الشائعة</a>
+      </div>
+
+      <!-- Action Button -->
+      <div class="flex items-center gap-3">
+        <a href="../docs/presentation.html" target="_blank" class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-teal-900/60 hover:bg-teal-800 text-teal-200 border border-teal-700/50 text-xs font-heading font-semibold transition items-center gap-1.5">
+          <span>📑</span>
+          <span>عرض السلايدز</span>
+        </a>
+        <a href="#simulator" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-emerald to-teal-600 hover:from-teal-500 hover:to-brand-emerald text-white text-xs md:text-sm font-heading font-bold shadow-lg shadow-teal-950/60 transition flex items-center gap-2">
+          <span>💬</span>
+          <span>جرب البلاغ الآن</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <header class="relative z-10 pt-16 pb-24 px-6 max-w-7xl mx-auto text-center">
+    <!-- Pilot Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-accent text-xs md:text-sm font-semibold mb-8 animate-fade-in">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>المنظومة الأولى المخصصة للواقع المصري والمدن المحلية عبر تطبيق الواتساب</span>
+      <span>📍 السنبلاوين</span>
+    </div>
+
+    <!-- Main Headline -->
+    <h1 class="text-4xl md:text-7xl font-heading font-black text-white leading-tight md:leading-[1.15] max-w-5xl mx-auto">
+      صوتك واصل.. <br class="hidden md:block" />
+      <span class="bg-gradient-to-l from-brand-accent via-emerald-400 to-teal-200 bg-clip-text text-transparent">
+        وبلاغك محلول في 60 ثانية
+      </span>
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="text-base md:text-xl text-teal-100/80 mt-6 max-w-3xl mx-auto font-light leading-relaxed">
+      منظومة حكومية وخدمية ذكية تربط المواطن بالإدارة المحلية وفرق الصيانة مباشرة عبر <strong class="text-white font-semibold">الواتساب</strong>.
+      بلا تطبيق يُحمّل، وبلا حساب يُسجل. من عطل الإنارة وكسر المياه، إلى كود المتابعة الرسمي الموثق.
+    </p>
+
+    <!-- CTAs -->
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#simulator" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-brand-emerald hover:bg-teal-600 text-white font-heading font-bold text-base shadow-xl shadow-teal-900/60 transition flex items-center justify-center gap-3">
+        <span>📱</span>
+        <span>جرب محاكاة البلاغ الحي</span>
+      </a>
+      <a href="#dashboard" class="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card hover:bg-teal-900/60 text-teal-200 font-heading font-bold text-base transition flex items-center justify-center gap-3">
+        <span>📊</span>
+        <span>استكشف شاشة المسؤول</span>
+      </a>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto text-right">
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="text-3xl md:text-4xl font-heading font-black text-brand-accent">95%</div>
+        <p class="text-xs text-teal-200/70 mt-1">نسبة انتشار الواتساب بين أهالي المدن والقرى المصرية</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="text-3xl md:text-4xl font-heading font-black text-emerald-400">&lt; 60 ثانية</div>
+        <p class="text-xs text-teal-200/70 mt-1">زمن تسجيل البلاغ بالكامل من أول رسالة حتى كود المتابعة</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="text-3xl md:text-4xl font-heading font-black text-white">0 تطبيق</div>
+        <p class="text-xs text-teal-200/70 mt-1">صفر تحميل إضافي وصفر استهلاك لمساحة هاتف المواطن</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="text-3xl md:text-4xl font-heading font-black text-brand-accent">100%</div>
+        <p class="text-xs text-teal-200/70 mt-1">مطابقة لقانون حماية البيانات الشخصية المصري 151/2020</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- THE PROBLEM VS SOLUTION -->
+  <section id="about" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">المعادلة الجديدة</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">لماذا تفشل الطرق التقليدية وتنجح "واصل"؟</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Old Way -->
+      <div class="glass-card p-8 rounded-3xl border-red-900/40 bg-red-950/10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold mb-6">
+          <span>❌</span> <span>الواقع الحالي (قبل واصل)</span>
+        </div>
+        <ul class="space-y-4 text-sm text-teal-100/70 text-right">
+          <li class="flex items-start gap-3">
+            <span class="text-red-400 font-bold shrink-0">✕</span>
+            <span><strong>بوستات غاضبة على فيسبوك:</strong> المواطن يشتكي في مجموعات غير رسمية مثل ("شباب السنبلاوين") مما يخلق شائعات دون حل فعلي.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-red-400 font-bold shrink-0">✕</span>
+            <span><strong>دفاتر ورقية ضائعة:</strong> الشكاوى المقدمة بمكاتب الاستقبال تسجل ورقياً وتضيع بين الأدراج دون متابعة زمنية.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-red-400 font-bold shrink-0">✕</span>
+            <span><strong>تطبيقات مهجورة:</strong> التطبيقات الحكومية تفشل لأن المواطن يرفض تحميلها أو ينسى كلمة السر المعقدة.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-red-400 font-bold shrink-0">✕</span>
+            <span><strong>المسؤول في معزل عن الأرقام:</strong> غياب أي إحصائية توضح من الفني الملتزم ومن المقصر في الشارع.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Wassel Way -->
+      <div class="glass-card p-8 rounded-3xl border-emerald-500/40 bg-brand-surface/40 glow-teal">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-6">
+          <span>✔</span> <span>مع منظومة واصل (Wassel)</span>
+        </div>
+        <ul class="space-y-4 text-sm text-teal-100/90 text-right">
+          <li class="flex items-start gap-3">
+            <span class="text-emerald-400 font-bold shrink-0">✔</span>
+            <span><strong>قناة موحدة ومحكومة:</strong> شكوى المواطن تتحول فوراً لتذكرة رسمية بمسار عمل واضح دون أي بلبلة.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-emerald-400 font-bold shrink-0">✔</span>
+            <span><strong>كود متابعة وطني موحد:</strong> يستلم المواطن رقماً رسمياً مثل <code class="text-brand-accent font-mono">SBL-K7HN3R</code> يستعلم به في أي ثانية.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-emerald-400 font-bold shrink-0">✔</span>
+            <span><strong>على الواتساب المألوف:</strong> في اليد التي يكتب بها يومياً، مع ذكاء اصطناعي يفهم العامية المصرية التلقائية.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-emerald-400 font-bold shrink-0">✔</span>
+            <span><strong>شاشة تحكم فورية للمسؤول:</strong> متوسط زمن الحل الفعلي بالساعة والدقيقة، وتحديد البلاغات المتأخرة فوراً.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (5 STEPS) -->
+  <section id="how-it-works" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">رحلة البلاغ السلسة</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">5 خطوات بسيطة تفصل المواطن عن الحل</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div class="glass-card p-6 rounded-2xl text-right relative">
+        <span class="text-3xl font-heading font-black text-brand-accent/40 absolute top-4 left-4">01</span>
+        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-brand-accent text-xl flex items-center justify-center mb-4">💬</div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">رسالة الواتساب</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">يرسل المواطن رسالة عفوية ("مساء الخير" أو "1") على رقم الواتساب الرسمي للبوت.</p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-right relative">
+        <span class="text-3xl font-heading font-black text-brand-accent/40 absolute top-4 left-4">02</span>
+        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-brand-accent text-xl flex items-center justify-center mb-4">🔢</div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">تحديد القسم</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">يختار رقم القسم من القائمة الذكية (إنارة، مياه، نظافة، طرق، استقبال).</p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-right relative">
+        <span class="text-3xl font-heading font-black text-brand-accent/40 absolute top-4 left-4">03</span>
+        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-brand-accent text-xl flex items-center justify-center mb-4">📝</div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">وصف المشكلة</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">يكتب وصف المشكلة بجملة مفيدة بالعامية؛ والبوت ينظف النص تلقائياً.</p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-right relative">
+        <span class="text-3xl font-heading font-black text-brand-accent/40 absolute top-4 left-4">04</span>
+        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-brand-accent text-xl flex items-center justify-center mb-4">📸</div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">صورة العطل</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">يرفع صورة المشكلة من الكاميرا مباشرة أو يرسل "تخطي" للمتابعة بدون صورة.</p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-right relative border-brand-accent/50 bg-teal-900/30">
+        <span class="text-3xl font-heading font-black text-brand-accent/40 absolute top-4 left-4">05</span>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 text-xl flex items-center justify-center mb-4">📍</div>
+        <h3 class="text-base font-heading font-bold text-brand-accent mb-2">الموقع والاعتماد</h3>
+        <p class="text-xs text-teal-100/80 leading-relaxed">يرسل موقع الـ GPS أو يكتب اسم الشارع؛ ويعتمد البلاغ ويصدر كود المتابعة فوراً.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE INTERACTIVE WHATSAPP BOT SIMULATOR -->
+  <section id="simulator" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">محاكاة حية وتفاعلية</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">جرب تجربة المواطن بنفسك الآن</h2>
+      <p class="text-teal-200/70 text-sm mt-2">اضغط على الخيارات داخل شاشة الواتساب التفاعلية وشاهد ردود البوت اللحظية كما تحدث في الواقع تماماً!</p>
+    </div>
+
+    <!-- Phone Simulator Container -->
+    <div class="max-w-md mx-auto rounded-[40px] p-3 bg-slate-900 border-4 border-slate-700 shadow-2xl shadow-teal-950/80">
+      <!-- Phone Screen -->
+      <div class="rounded-[32px] overflow-hidden bg-[#0B141A] flex flex-col h-[620px] relative border border-slate-800">
+        <!-- WhatsApp Header -->
+        <div class="bg-[#1F2C34] px-4 py-3 flex items-center justify-between border-b border-slate-700/60 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-brand-emerald flex items-center justify-center text-white font-heading font-black">
+              و
+            </div>
+            <div class="text-right">
+              <div class="flex items-center gap-1.5">
+                <span class="text-white font-bold text-sm">منظومة واصل — السنبلاوين</span>
+                <span class="text-emerald-400 text-xs">✔</span>
+              </div>
+              <span id="botStatus" class="text-[11px] text-emerald-400">متصل الآن</span>
+            </div>
+          </div>
+          <button onclick="resetSimulator()" class="text-xs text-teal-300 hover:text-white bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700" title="إعادة تشغيل المحاكاة">
+            🔄 إعادة
+          </button>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3.5 text-right text-xs md:text-sm">
+          <!-- Initial Bot Message -->
+          <div class="chat-bubble-in p-3 max-w-[85%] ml-auto text-teal-50">
+            أهلاً بحضرتك في <strong>منظومة واصل (Wassel)</strong> 🏙️<br />
+            خدمة البلاغات والمتابعة لمدينة السنبلاوين.<br />
+            ━━━━━━━━━━━━━━━<br />
+            اختار من القائمة:<br />
+            <strong>1️⃣ بلّغ عن مشكلة</strong><br />
+            <strong>2️⃣ تتبع بلاغ سابق</strong><br />
+            <strong>3️⃣ دليل الخدمات</strong>
+          </div>
+        </div>
+
+        <!-- Interactive Action Bar (Buttons) -->
+        <div id="chatActions" class="p-3 bg-[#1F2C34] border-t border-slate-800 flex flex-wrap gap-2 justify-center shrink-0">
+          <button onclick="simUserSend('1', '1️⃣ بلّغ عن مشكلة')" class="px-3.5 py-2 rounded-xl bg-teal-800/80 hover:bg-brand-emerald text-white text-xs font-semibold transition border border-teal-600/40">
+            1️⃣ بلّغ عن مشكلة
+          </button>
+          <button onclick="simUserSend('2', '2️⃣ تتبع بلاغ سابق')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-200 text-xs font-semibold transition border border-slate-700">
+            2️⃣ تتبع بلاغ
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMAND CENTER / DASHBOARD SHOWCASE -->
+  <section id="dashboard" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">لوحة القيادة للمسؤول</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">ما الذي تراه الإدارة لحظة بلحظة؟</h2>
+      <p class="text-teal-200/70 text-sm mt-2">داشبورد متطور بتقنية Next.js 14 يعمل على أجهزة الكمبيوتر وشاشات الهواتف المحمولة لطاقم العمل.</p>
+    </div>
+
+    <!-- Mockup Dashboard Container -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 border-teal-500/30 glow-teal max-w-6xl mx-auto">
+      <!-- Top Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div class="p-5 rounded-2xl bg-brand-surface/70 border border-teal-600/30 text-right">
+          <span class="text-xs font-semibold text-teal-300">متوسط زمن الإنجاز والحل</span>
+          <div class="text-3xl font-heading font-black text-white mt-2">14.2 ساعة</div>
+          <span class="text-[11px] text-emerald-400 block mt-1">✔ انخفاض 38% عن الأسبوع الماضي</span>
+        </div>
+        <div class="p-5 rounded-2xl bg-brand-surface/70 border border-teal-600/30 text-right">
+          <span class="text-xs font-semibold text-teal-300">إجمالي البلاغات المنجزة هذا الشهر</span>
+          <div class="text-3xl font-heading font-black text-emerald-400 mt-2">148 بلاغاً</div>
+          <span class="text-[11px] text-teal-300/70 block mt-1">من إجمالي 162 بلاغاً مسجلاً</span>
+        </div>
+        <div class="p-5 rounded-2xl bg-red-950/30 border border-red-800/40 text-right">
+          <span class="text-xs font-semibold text-red-300">البلاغات المتأخرة (&gt; 72 ساعة)</span>
+          <div class="text-3xl font-heading font-black text-red-400 mt-2">2 فقط</div>
+          <span class="text-[11px] text-red-300/70 block mt-1">🚨 تنبيه عاجل للفريق الميداني للمتابعة</span>
+        </div>
+      </div>
+
+      <!-- Mockup Table -->
+      <div class="overflow-x-auto rounded-xl border border-teal-800/60 bg-brand-dark/60">
+        <table class="w-full text-right text-xs md:text-sm">
+          <thead class="bg-brand-surface/80 text-teal-200 border-b border-teal-800/60">
+            <tr>
+              <th class="p-3.5">كود البلاغ</th>
+              <th class="p-3.5">الفئة</th>
+              <th class="p-3.5">وصف المشكلة</th>
+              <th class="p-3.5">الموقع</th>
+              <th class="p-3.5">الحالة</th>
+              <th class="p-3.5">الموظف المعين</th>
+              <th class="p-3.5">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-teal-900/40 text-teal-100">
+            <tr class="hover:bg-teal-900/20">
+              <td class="p-3.5 font-mono font-bold text-brand-accent">SBL-K7HN3R</td>
+              <td class="p-3.5">إنارة عامة</td>
+              <td class="p-3.5">عمود نور مكسور أمام مدرسة النور...</td>
+              <td class="p-3.5"><span class="text-blue-400 underline">📍 فتح في الخريطة</span></td>
+              <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] bg-blue-500/20 text-blue-300 border border-blue-500/30">🔵 جاري العمل</span></td>
+              <td class="p-3.5">د. أحمد فؤاد</td>
+              <td class="p-3.5"><button class="px-2.5 py-1 rounded bg-teal-800 hover:bg-teal-700 text-white text-xs">معاينة</button></td>
+            </tr>
+            <tr class="hover:bg-teal-900/20">
+              <td class="p-3.5 font-mono font-bold text-brand-accent">SBL-M9PX4T</td>
+              <td class="p-3.5">مياه وصرف</td>
+              <td class="p-3.5">تسريب مياه بجوار موقف السنبلاوين...</td>
+              <td class="p-3.5"><span class="text-blue-400 underline">📍 فتح في الخريطة</span></td>
+              <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🟢 تم الحل</span></td>
+              <td class="p-3.5">م. صبحي كامل</td>
+              <td class="p-3.5"><button class="px-2.5 py-1 rounded bg-teal-800 hover:bg-teal-700 text-white text-xs">معاينة</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREE STAKEHOLDER PERSPECTIVES (TRIAD) -->
+  <section class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">التكامل المؤسسي</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">كيف تخدم المنظومة الجميع بتناغم فوري؟</h2>
+      <p class="text-teal-200/70 text-sm mt-2">تصميم مدروس يربط الشارع بالمكتب الميداني وبغرفة القيادة دون حلقة وسيطة مفقودة.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-right">
+      <!-- Citizen -->
+      <div class="glass-card p-8 rounded-3xl border-teal-500/30 hover:border-teal-400 transition flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-teal-500/20 text-brand-accent text-2xl flex items-center justify-center mb-6">
+            📱
+          </div>
+          <span class="text-xs font-bold text-teal-400 uppercase tracking-wide">الطرف الأول</span>
+          <h3 class="text-xl font-heading font-bold text-white mt-1 mb-4">المواطن (في الشارع أو المنزل)</h3>
+          <ul class="space-y-3 text-xs md:text-sm text-teal-100/80 leading-relaxed">
+            <li class="flex items-start gap-2">
+              <span class="text-brand-accent font-bold">✔</span>
+              <span><strong>صفر احتكاك:</strong> بلا تحميل برامج، بلا كلمات سر، وبلا تعقيدات روتينية.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-brand-accent font-bold">✔</span>
+              <span><strong>ثقة ورسمية:</strong> يحصل على رقم بلاغ كودي موحد فور إتمام الإرسال في 60 ثانية.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-brand-accent font-bold">✔</span>
+              <span><strong>إشعارات تلقائية:</strong> رسالة واتساب عند بدء عمل الفني، ورسالة بصورة الحل بعد الإنجاز، مع حق الاعتراض خلال 48 ساعة.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="mt-8 pt-4 border-t border-teal-900/40 text-xs text-brand-accent font-semibold">
+          القناة: تطبيق واتساب العادي
+        </div>
+      </div>
+
+      <!-- Field Staff -->
+      <div class="glass-card p-8 rounded-3xl border-emerald-500/30 hover:border-emerald-400 transition flex flex-col justify-between glow-teal">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 text-2xl flex items-center justify-center mb-6">
+            🛠️
+          </div>
+          <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">الطرف الثاني</span>
+          <h3 class="text-xl font-heading font-bold text-white mt-1 mb-4">الفني ومشرف الحركة الميداني</h3>
+          <ul class="space-y-3 text-xs md:text-sm text-teal-100/80 leading-relaxed">
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <span><strong>معلومات كاملة ودقيقة:</strong> يستلم صورة العطل ولوكيشن GPS بالضبط بضغطة زر لفتح خرائط جوجل.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <span><strong>تحديد الأولويات:</strong> تصنيف تلقائي للبلاغات العاجلة (أسلاك كهرباء عارية أو كسر ماسورة رئيسية).</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">✔</span>
+              <span><strong>توثيق الجهد الميداني:</strong> رفع صورة بعد الإصلاح لحفظ حقه أمام الرقابة وإثبات إتمام المهمة.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="mt-8 pt-4 border-t border-teal-900/40 text-xs text-emerald-400 font-semibold">
+          القناة: تابلت أو موبايل المشرف / الويب المتجاوب
+        </div>
+      </div>
+
+      <!-- City Leadership -->
+      <div class="glass-card p-8 rounded-3xl border-teal-500/30 hover:border-teal-400 transition flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 text-2xl flex items-center justify-center mb-6">
+            🏛️
+          </div>
+          <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">الطرف الثالث</span>
+          <h3 class="text-xl font-heading font-bold text-white mt-1 mb-4">رئيس المدينة والقيادة التنفيذية</h3>
+          <ul class="space-y-3 text-xs md:text-sm text-teal-100/80 leading-relaxed">
+            <li class="flex items-start gap-2">
+              <span class="text-blue-400 font-bold">✔</span>
+              <span><strong>رؤية شاملة بدون تزييف:</strong> عداد حقيقي يوضح زمن الحل بالدقائق ونسب الإنجاز لكل قطاع.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-400 font-bold">✔</span>
+              <span><strong>إنذار مبكر للبلاغات المتأخرة:</strong> تمييز أي بلاغ يتخطى 72 ساعة باللون الأحمر للمحاسبة الفورية.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-400 font-bold">✔</span>
+              <span><strong>تقارير رسمية جاهزة للمحافظة:</strong> بنقرة زر يتم تصدير تقرير إحصائي يبرز إنجازات مجلس المدينة بالأرقام الموثقة.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="mt-8 pt-4 border-t border-teal-900/40 text-xs text-blue-400 font-semibold">
+          القناة: لوحة القيادة الرقمية (Next.js 14)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE & ENGINEERING SPECS -->
+  <section id="architecture" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">الهندسة البرمجية والتنفيذ</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">معمارية مرنة، موثوقة، واقتصادية</h2>
+      <p class="text-teal-200/70 text-sm mt-2">مبنية بأحدث المعايير البرمجية المقاومة للانقطاع والأخطاء البشرية (Black Swan Resistant).</p>
+    </div>
+
+    <!-- Tech Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-right mb-12">
+      <!-- 1. API & Bot Engine -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">⚡</span>
+          <span class="text-[11px] font-mono text-brand-accent px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">NestJS + Fastify</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">محرك المحادثات عالي الأداء</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          معالجة مئات الرسائل اللحظية بنظام Non-blocking I/O وقواعد التحقق المسبقة، مع سرعة استجابة تقل عن 80ms في الباك إند.
+        </p>
+      </div>
+
+      <!-- 2. Database & PostGIS -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">🗺️</span>
+          <span class="text-[11px] font-mono text-emerald-400 px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">PostgreSQL 16 + PostGIS</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">قاعدة بيانات جغرافية متقدمة</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          تحديد مواقع البلاغات الجغرافية بدقة، ورصد التكرارات في نفس المنطقة (Geofencing) لمنع ازدواجية بلاغات نفس المشكلة.
+        </p>
+      </div>
+
+      <!-- 3. WhatsApp Gateway -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">💬</span>
+          <span class="text-[11px] font-mono text-teal-300 px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">Chatwoot + Cloud API</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">بوابة الواتساب الرسمية</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          اتصال مباشر بدون أي روبوتات غير رسمية قد تعرض الرقم للحظر؛ مع دعم التبديل البشري لتدخل موظف خدمة المواطنين يدوياً عند الضرورة.
+        </p>
+      </div>
+
+      <!-- 4. BullMQ & Redis -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">🛡️</span>
+          <span class="text-[11px] font-mono text-brand-accent px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">BullMQ + Redis 7</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">طوابير متينة وعزل التزامن</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          آلية Token-based Distributed Locks مع Outbox Pattern تضمن عدم ضياع أي رسالة حتى أثناء انقطاع الشبكة أو إعادة تشغيل الخادم.
+        </p>
+      </div>
+
+      <!-- 5. Media & Storage -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">📦</span>
+          <span class="text-[11px] font-mono text-emerald-400 px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">MinIO S3 + Presigned URLs</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">تخزين صور البلاغات محلياً</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          تخزين الصور المرفقة داخل سيرفر المدينة مع روابط مؤقتة مشفرة، والتطهير التلقائي للبيانات الحساسة طبقاً لسياسات الحفظ.
+        </p>
+      </div>
+
+      <!-- 6. Next.js 14 Dashboard -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-2xl">🖥️</span>
+          <span class="text-[11px] font-mono text-teal-300 px-2.5 py-1 rounded-full bg-teal-900/50 border border-teal-700/40">Next.js 14 + Tailwind</span>
+        </div>
+        <h3 class="text-base font-heading font-bold text-white mb-2">لوحة تحكم خفيفة وفورية</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">
+          واجهة عربية بالكامل بتصميم عصري سريع، مع صلاحيات محكمة للمدير والمشرفين وممثلي الأحياء لمنع تسريب أي بيانات.
+        </p>
+      </div>
+    </div>
+
+    <!-- Cost & Infrastructure Highlights -->
+    <div class="glass-card p-8 rounded-3xl border-teal-500/40 bg-gradient-to-l from-teal-950/40 to-brand-surface/40 text-right">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+          <span class="text-brand-accent text-xs font-bold uppercase tracking-wider">الكفاءة المالية والتشغيلية</span>
+          <h3 class="text-xl md:text-2xl font-heading font-extrabold text-white mt-1">تكلفة تشغيل رمزية تعادل 2% فقط من التطبيقات التقليدية</h3>
+          <p class="text-xs md:text-sm text-teal-100/70 mt-2 max-w-2xl leading-relaxed">
+            المنظومة بالكامل تعمل على خادم محلي (On-Premise) بمجلس المدينة أو خادم سحابي افتراضي اقتصادي (20$ - 40$ شهرياً فقط)، دون الحاجة لتراخيص برمجية معقدة أو دفع ملايين لتطوير تطبيقات جوال يهجرها المواطنون.
+          </p>
+        </div>
+        <div class="shrink-0">
+          <div class="text-center p-4 rounded-2xl bg-brand-dark/70 border border-teal-700/50">
+            <span class="text-xs text-teal-300">ميزانية التطوير المحسوبة</span>
+            <div class="text-2xl font-heading font-black text-emerald-400 mt-1">124 ساعة عمل</div>
+            <span class="text-[10px] text-teal-400/80">خطة تنفيذ واقعية ومحددة بالدقيقة</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECURITY & PDPL LAW 151 -->
+  <section id="security" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">الأمان والسيادة الرقمية</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">حماية قصوى وبيانات مشفرة بقوة القانون</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass-card p-6 rounded-2xl text-right">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-brand-accent text-2xl flex items-center justify-center mb-4">🔐</div>
+        <h3 class="text-lg font-heading font-bold text-white mb-2">تشفير AES-256 و Blind Index</h3>
+        <p class="text-sm text-teal-100/70 leading-relaxed">
+          أرقام هواتف المواطنين مشفرة بالكامل في قاعدة البيانات؛ حتى في حالة تسريب نسخة من الخادم يستحيل فك تشفير أرقام الهواتف أو استخدامها تجارياً.
+        </p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl text-right">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-brand-accent text-2xl flex items-center justify-center mb-4">⚖️</div>
+        <h3 class="text-lg font-heading font-bold text-white mb-2">قانون 151 لسنة 2020</h3>
+        <p class="text-sm text-teal-100/70 leading-relaxed">
+          مطابقة تامة لقانون حماية البيانات الشخصية المصري؛ توثيق الرضا عند الاستخدام، وزر فوري لتنفيذ "حق المحو والنسيان" بضغطة واحدة.
+        </p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl text-right">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-brand-accent text-2xl flex items-center justify-center mb-4">📜</div>
+        <h3 class="text-lg font-heading font-bold text-white mb-2">سجلات غير قابلة للتلاعب</h3>
+        <p class="text-sm text-teal-100/70 leading-relaxed">
+          جداول التدقيق (Append-Only) تمنع مسح أو تعديل أي إجراء تاريخي، لضمان النزاهة التامة والشفافية أمام جهات الرقابة والتفتيش.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUNBULLAWEIN PILOT ROLLOUT -->
+  <section id="pilot" class="relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">خارطة الطريق الميدانية</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">خطة الإطلاق التجريبي في السنبلاوين (30 يوماً)</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 text-right">
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-t-teal-500">
+        <span class="text-xs font-bold text-brand-accent block mb-1 font-heading">الأسبوع الأول</span>
+        <h3 class="text-base font-heading font-bold text-white mb-2">التشغيل الداخلي (Dark Launch)</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">تدريب طاقم الاستقبال في 45 دقيقة وتجربة 20 بلاغاً وهمياً لاختبار استقرار البوت وقواعد البيانات.</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-t-teal-500">
+        <span class="text-xs font-bold text-brand-accent block mb-1 font-heading">الأسبوع الثاني</span>
+        <h3 class="text-base font-heading font-bold text-white mb-2">الإطلاق الهادئ (Soft Launch)</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">نشر لافتات الـ QR Code في صالات الاستقبال والانتظار بالمنشأة وتلقي أول 25 بلاغاً من المواطنين.</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-t-teal-500">
+        <span class="text-xs font-bold text-brand-accent block mb-1 font-heading">الأسبوع الثالث</span>
+        <h3 class="text-base font-heading font-bold text-white mb-2">النشر والتوسع المجتمعي</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">الإعلان الرسمي بصفحات المدينة، وقياس متوسط زمن الاستجابة الفعلي في الميدان.</p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-t-brand-accent bg-teal-900/30">
+        <span class="text-xs font-bold text-brand-accent block mb-1 font-heading">الأسبوع الرابع</span>
+        <h3 class="text-base font-heading font-bold text-white mb-2">عرض تقرير الأداء الرسمي</h3>
+        <p class="text-xs text-teal-100/70 leading-relaxed">استخراج تقرير بالأرقام ومعدل الرضا لتقديمه للمحافظ والقيادات كنقلة نوعية في المدينة.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXECUTIVE & CITIZEN FAQ -->
+  <section id="faq" class="relative z-10 py-20 px-6 max-w-5xl mx-auto border-t border-teal-900/40">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-brand-accent text-xs md:text-sm font-heading font-bold uppercase tracking-wider">إجابات حاسمة</span>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mt-2">الأسئلة الشائعة للقيادات والمواطنين</h2>
+      <p class="text-teal-200/70 text-sm mt-2">إجابات شفافة عن الجوانب التقنية، الأمنية، والتنفيذية للمنظومة.</p>
+    </div>
+
+    <div class="space-y-4 text-right">
+      <!-- Q1 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>هل يحتاج المواطن إلى تحميل أي تطبيق أو دفع أي رسوم؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          إطلاقاً! الخدمة مجانية تماماً للمواطن وتعمل من خلال تطبيق <strong>الواتساب</strong> المثبت بالفعل على هاتفه. لا يتطلب الأمر أي تسجيل دخول أو تحميل تطبيقات إضافية، مما يضمن أعلى نسبة وصول واستخدام بين كافة فئات المجتمع (شباب، كبار سن، وسيدات).
+        </p>
+      </details>
+
+      <!-- Q2 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>كيف تتعامل المنظومة مع البلاغات المتكررة عن نفس العطل في نفس الشارع؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          تعتمد المنظومة على محرك PostGIS الجغرافي وخوارزمية رصد التكرار الذكي؛ إذا أبلغ مواطنون متعددون عن نفس عمود الإنارة أو كسر المياه في نفس النطاق الجغرافي، يقوم النظام بضم البلاغات تحت "تذكرة رئيسية واحدة"، ويُرسل لكافة المواطنين نفس كود المتابعة وإشعارات الإنجاز، مما يمنع إرباك الفنيين بتكرار الزيارات الميدانية.
+        </p>
+      </details>
+
+      <!-- Q3 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>ماذا يحدث إذا أُغلق البلاغ كروكياً دون حل المشكلة في الشارع؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          يُلزم النظام الفني برفع "صورة بعد الإصلاح" كشرط أساسي لإغلاق التذكرة. بالإضافة إلى ذلك، يتلقى المواطن رسالة إشعار تلقائية بالحل مع إمكانية الرد بكلمة <strong>"اعتراض"</strong> خلال 48 ساعة. إذا اعترض المواطن، يُعاد فتح البلاغ تلقائياً ويُصنف كـ "بلاغ متنازع عليه" مع إشعار عاجل لمكتب رئيس المدينة للتفتيش.
+        </p>
+      </details>
+
+      <!-- Q4 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>ما مدى مطابقة المنظومة لقانون حماية البيانات الشخصية رقم 151 لسنة 2020؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          مطابقة بنسبة 100%. أرقام هواتف المواطنين مشفرة بخوارزمية HMAC Blind Index وتشفير AES-256، مما يعني أنه يستحيل على أي شخص أو مخترق استخراج قائمة بأرقام المواطنين. كما تدعم المنظومة إجراء "حق المحو والنسيان" بضغطة زر لمسح بيانات أي مواطن بناءً على طلبه الرسمي.
+        </p>
+      </details>
+
+      <!-- Q5 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>كم من الوقت يستغرق تجهيز وتدريب الطاقم لبدء البايلوت في المدينة؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          واجهة لوحة القيادة مصممة باللغة العربية البسيطة ولا تتطلب أي خبرة تقنية مسبقة. جلسة تدريبية واحدة لمدة <strong>45 دقيقة</strong> كافية لتمكين طاقم الاستقبال والمشرفين من إدارة البلاغات وتوزيعها بكفاءة كاملة.
+        </p>
+      </details>
+
+      <!-- Q6 -->
+      <details class="glass-card rounded-2xl p-6 group cursor-pointer border-teal-500/20 open:border-brand-accent/50 transition">
+        <summary class="font-heading font-bold text-white text-base md:text-lg flex items-center justify-between list-none">
+          <span>هل يمكن ربط المنظومة ببوابة الشكاوى الحكومية أو أنظمة المحافظة مستقبلاً؟</span>
+          <span class="text-brand-accent text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <p class="text-xs md:text-sm text-teal-100/70 mt-4 leading-relaxed border-t border-teal-900/40 pt-4">
+          نعم بالتأكيد. المنظومة مبنية بمعمارية برمجية مفتوحة المعايير تعتمد على RESTful APIs و Webhooks، مما يتيح تصدير أو مزامنة التذاكر مع أي منظومة حكومية مركزية في ثوانٍ معدودة دون إعادة كتابة أي كود.
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FOOTER & CTA -->
+  <footer class="relative z-10 py-16 px-6 border-t border-teal-900/50 bg-brand-dark text-center">
+    <div class="max-w-4xl mx-auto">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-emerald to-brand-accent flex items-center justify-center text-white font-heading font-black text-2xl mx-auto mb-6 shadow-xl shadow-teal-900/40">
+        و
+      </div>
+      <h2 class="text-3xl md:text-4xl font-heading font-extrabold text-white mb-3">
+        جاهزون لبدء الإطلاق التجريبي فور توجيهكم
+      </h2>
+      <p class="text-teal-200/70 text-sm max-w-lg mx-auto mb-8">
+        كل ما نحتاجه هو تخصيص خط واتساب رسمي واحد وبدء التجربة الميدانية لمدة 30 يوماً.
+      </p>
+
+      <div class="flex items-center justify-center gap-4 text-xs text-teal-400">
+        <span>📍 جمهورية مصر العربية</span>
+        <span>•</span>
+        <span>مدينة السنبلاوين، محافظة الدقهلية</span>
+        <span>•</span>
+        <span>منظومة واصل v1.0</span>
+      </div>
+
+      <div class="mt-8 text-xs text-teal-600 border-t border-teal-900/40 pt-6">
+        جميع الحقوق محفوظة لمنظومة واصل (Wassel) © 2026 — صُممت وهُندست خصيصاً للواقع والمدن المصرية
+      </div>
+    </div>
+  </footer>
+
+  <!-- INTERACTIVE SIMULATOR SCRIPT -->
+  <script>
+    const chat = document.getElementById('chatMessages');
+    const actions = document.getElementById('chatActions');
+    const statusText = document.getElementById('botStatus');
+
+    let currentStep = 'MENU';
+
+    function addMessage(sender, text, isOutbox = false) {
+      const bubble = document.createElement('div');
+      bubble.className = isOutbox 
+        ? 'chat-bubble-out p-3 max-w-[85%] mr-auto text-white' 
+        : 'chat-bubble-in p-3 max-w-[85%] ml-auto text-teal-50';
+      bubble.innerHTML = text;
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showTyping(callback) {
+      statusText.textContent = 'يكتب الآن...';
+      setTimeout(() => {
+        statusText.textContent = 'متصل الآن';
+        callback();
+      }, 700);
+    }
+
+    function simUserSend(choice, label) {
+      addMessage('user', label, true);
+      actions.innerHTML = '<span class="text-xs text-teal-300 py-1">جاري المعالجة...</span>';
+
+      if (currentStep === 'MENU') {
+        if (choice === '1') {
+          showTyping(() => {
+            addMessage('bot', `
+              🔧 <strong>إيه نوع المشكلة؟</strong><br />
+              1️⃣ إنارة (أعمدة نور)<br />
+              2️⃣ مياه (انقطاع / تسريب)<br />
+              3️⃣ صرف صحي<br />
+              4️⃣ نظافة (قمامة / شوارع)
+            `);
+            currentStep = 'CATEGORY';
+            actions.innerHTML = `
+              <button onclick="simUserSend('1', '1️⃣ إنارة')" class="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-brand-emerald text-white text-xs">1️⃣ إنارة</button>
+              <button onclick="simUserSend('2', '2️⃣ مياه')" class="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-brand-emerald text-white text-xs">2️⃣ مياه</button>
+              <button onclick="simUserSend('4', '4️⃣ نظافة')" class="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-brand-emerald text-white text-xs">4️⃣ نظافة</button>
+            `;
+          });
+        } else if (choice === '2') {
+          showTyping(() => {
+            addMessage('bot', `
+              🔍 <strong>حالة البلاغ التجريبي:</strong><br />
+              كود: <strong class="text-brand-accent">SBL-K7HN3R</strong><br />
+              🔧 النوع: إنارة عامة<br />
+              📊 الحالة: <strong>جاري العمل 🔵</strong><br />
+              💬 آخر تعليق: "تم توجيه فني الكهرباء للموقع وجاري فحص الكابلات."
+            `);
+            actions.innerHTML = `
+              <button onclick="resetSimulator()" class="px-4 py-2 rounded-xl bg-teal-800 text-white text-xs">بدء بلاغ جديد 🔄</button>
+            `;
+          });
+        }
+      } else if (currentStep === 'CATEGORY') {
+        showTyping(() => {
+          addMessage('bot', `
+            📝 تمام، تم اختيار القسم.<br />
+            <strong>وصّف المشكلة في رسالة واحدة:</strong><br />
+            (مثلاً: عمود النور اللي قدام مدرسة النور مطفي من أسبوع والشارع ضلمة)
+          `);
+          currentStep = 'DESCRIPTION';
+          actions.innerHTML = `
+            <button onclick="simUserSend('desc', 'عمود النور أمام المدرسة مطفي والشارع ضلمة')" class="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-brand-emerald text-white text-xs">
+              📝 إرسال وصف العطل
+            </button>
+          `;
+        });
+      } else if (currentStep === 'DESCRIPTION') {
+        showTyping(() => {
+          addMessage('bot', `
+            📸 لو عندك صورة للمشكلة ابعتها دلوقتي — الصورة بتساعد الفني يفهم العطل أسرع!
+          `);
+          currentStep = 'PHOTO';
+          actions.innerHTML = `
+            <button onclick="simUserSend('photo', '📷 إرسال صورة العمود المكسور')" class="px-3 py-1.5 rounded-lg bg-teal-800 hover:bg-brand-emerald text-white text-xs">
+              📷 إرسال صورة
+            </button>
+            <button onclick="simUserSend('skip', '⏭️ تخطي الصورة')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-teal-200 text-xs">
+              ⏭️ تخطي
+            </button>
+          `;
+        });
+      } else if (currentStep === 'PHOTO') {
+        showTyping(() => {
+          addMessage('bot', `
+            ✅ تم استلام الصورة!<br />
+            📍 <strong>دلوقتي ابعتلنا موقع المشكلة:</strong><br />
+            دوس على 📎 المرفقات > 📍 موقع، أو اكتب اسم الشارع وأقرب علامة مميزة.
+          `);
+          currentStep = 'LOCATION';
+          actions.innerHTML = `
+            <button onclick="simUserSend('gps', '📍 إرسال لوكيشن GPS الحقيقي')" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-brand-emerald text-white text-xs">
+              📍 إرسال لوكيشن GPS
+            </button>
+            <button onclick="simUserSend('text_loc', '📝 شارع المحطة قدام الجامع الكبير')" class="px-3 py-1.5 rounded-lg bg-teal-800 text-white text-xs">
+              📝 كتابة اسم الشارع
+            </button>
+          `;
+        });
+      } else if (currentStep === 'LOCATION') {
+        showTyping(() => {
+          addMessage('bot', `
+            🎉 <strong>تم تسجيل بلاغك بنجاح!</strong><br />
+            ━━━━━━━━━━━━━━━<br />
+            🔖 <strong>رقم المتابعة: SBL-K7HN3R</strong><br />
+            🔧 القسم: إنارة عامة<br />
+            📍 الموقع: السنبلاوين<br />
+            📊 الحالة: جديد 🔴<br />
+            ━━━━━━━━━━━━━━━<br />
+            احتفظ برقم المتابعة — وهيصلك إشعار تلقائي على الواتساب فور بدء الفني في العمل 🤝<br />
+            <small class="text-teal-300">💡 يحق لك الاعتراض خلال 48 ساعة بإرسال كلمة "اعتراض" لو أُغلق البلاغ كروكياً.</small>
+          `);
+          currentStep = 'DONE';
+          actions.innerHTML = `
+            <button onclick="resetSimulator()" class="px-4 py-2 rounded-xl bg-brand-emerald text-white text-xs font-bold">
+              تجربة بلاغ آخر 🔄
+            </button>
+          `;
+        });
+      }
+    }
+
+    function resetSimulator() {
+      currentStep = 'MENU';
+      chat.innerHTML = `
+        <div class="chat-bubble-in p-3 max-w-[85%] ml-auto text-teal-50">
+          أهلاً بحضرتك في <strong>منظومة واصل (Wassel)</strong> 🏙️<br />
+          خدمة البلاغات والمتابعة لمدينة السنبلاوين.<br />
+          ━━━━━━━━━━━━━━━<br />
+          اختار من القائمة:<br />
+          <strong>1️⃣ بلّغ عن مشكلة</strong><br />
+          <strong>2️⃣ تتبع بلاغ سابق</strong><br />
+          <strong>3️⃣ دليل الخدمات</strong>
+        </div>
+      `;
+      actions.innerHTML = `
+        <button onclick="simUserSend('1', '1️⃣ بلّغ عن مشكلة')" class="px-3.5 py-2 rounded-xl bg-teal-800/80 hover:bg-brand-emerald text-white text-xs font-semibold transition border border-teal-600/40">
+          1️⃣ بلّغ عن مشكلة
+        </button>
+        <button onclick="simUserSend('2', '2️⃣ تتبع بلاغ سابق')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-200 text-xs font-semibold transition border border-slate-700">
+          2️⃣ تتبع بلاغ
+        </button>
+      `;
+    }
+  </script>
+</body>
+</html>
