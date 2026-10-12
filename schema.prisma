@@ -288,7 +288,7 @@ model User {
   updatedAt          DateTime  @updatedAt @db.Timestamptz(3)
 
   tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  department      Department?   @relation(fields: [tenantId, departmentId], references: [tenantId, id], onDelete: SetNull)
+  department      Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   sessions        UserSession[]
   assignedReports Report[]
   reportEvents    ReportEvent[]
@@ -496,7 +496,7 @@ model Report {
   draft      ReportDraft   @relation(fields: [tenantId, draftId], references: [tenantId, id], onDelete: Restrict)
   contact    Contact       @relation(fields: [tenantId, contactId], references: [tenantId, id], onDelete: Restrict)
   category   Category      @relation(fields: [tenantId, categoryId], references: [tenantId, id], onDelete: Restrict)
-  department Department?   @relation(fields: [tenantId, departmentId], references: [tenantId, id], onDelete: SetNull)
+  department Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   assignedTo User?         @relation(fields: [tenantId, assignedToId], references: [tenantId, id], onDelete: Restrict)
   events     ReportEvent[]
 
